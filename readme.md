@@ -14,7 +14,7 @@ It's designed for use with browserify, but you can alternatively grab the `table
 Here's a basic example:
 
 ```js
-var TableEditor = require('./index');
+var TableEditor = require('table-editor');
 
 var headers = [
   { name: 'wat', type: 'string' },
