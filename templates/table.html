@@ -1,0 +1,12 @@
+<table id="table-editor">
+  <thead>
+    <tr>
+      <% headers.forEach(function (header) { %>
+        <th><%= header.name %></th>
+      <% }); %>
+    </tr>
+  </thead>
+  <tbody>
+    <%= rows %>
+  </tbody>
+</table>
