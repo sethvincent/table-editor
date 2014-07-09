@@ -1,46 +1,33 @@
 var fs = require('fs');
-var domify = require('domify');
-var template = require('lodash.template');
-var EventEmitter = require('events').EventEmitter;
+var Emitter = require('component-emitter');
 var inherits = require('inherits');
+var View = require('ractive');
 
 module.exports = TableEditor;
-inherits(TableEditor, EventEmitter);
-
-var tableTpl = fs.readFileSync('./templates/table.html', 'utf8');
-var rowTpl = fs.readFileSync('./templates/row.html', 'utf8');
+Emitter(TableEditor.prototype);
 
 function TableEditor (id, data, tableTemplate, rowTemplate) {
-  this.headers = data.headers;
-  this.rows = data.rows;
-  this.rowsHTML = '';
-
-  this.tableTemplate = template(tableTemplate || tableTpl);
-  this.rowTemplate = template(rowTemplate || rowTpl);
-
+  if (!(this instanceof TableEditor)) return new TableEditor(id, data, tableTemplate, rowTemplate);
   var self = this;
 
-  this.rows.forEach(function (row, i) {
-    self.rowsHTML += self.rowTemplate({ row:row, i:i });
+  this.data = data;
+  this.tableTemplate = tableTemplate || fs.readFileSync('./templates/table.html', 'utf8');
+
+  this.tableView = new View({
+    el: id,
+    template: View.parse(this.tableTemplate),
+    data: this.data
   });
 
-  var html = domify(this.tableTemplate({ headers: this.headers, rows: this.rowsHTML }));
-  this.container = document.getElementById(id);
-  this.container.appendChild(html);
-
-  var choose = require('attr-chooser')('active', function (el, ev) {
-    var field = el.parentNode.className;
-    var rowIndex = el.parentNode.parentNode.className;
-    self.emit('active', field, rowIndex, el, ev);
-    
-    el.addEventListener('input', function(e) {
-      self.rows[rowIndex][field] = el.value;
-      self.emit('change', self.rows[rowIndex][field], field, rowIndex, self.rows, e);
-    }, false);
+  this.tableView.on('change', function (data) {
+    self.emit('change', data);
   });
-
-  var elems = document.querySelectorAll('*[chooser]');
-  for (var i = 0; i < elems.length; i++) {
-    choose(elems[i], elems[i].getAttribute('chooser'));
-  }
 }
+
+TableEditor.prototype.addRow = function () {
+  
+};
+
+TableEditor.prototype.addColumn = function () {
+
+};

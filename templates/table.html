@@ -1,12 +1,20 @@
 <table id="table-editor">
   <thead>
     <tr>
-      <% headers.forEach(function (header) { %>
-        <th><%= header.name %></th>
-      <% }); %>
+      {{#headers:key}}
+        <th>{{name}}</th>
+      {{/headers}}
     </tr>
   </thead>
   <tbody>
-    <%= rows %>
+    {{#rows:i}}
+    <tr class="{{ i }}">
+      {{#this:value}}
+      <td class="{{value}}">
+        <textarea chooser="cell" value="{{this}}"></textarea>
+      </td>
+      {{/.}}
+    </tr>
+    {{/rows}}
   </tbody>
 </table>

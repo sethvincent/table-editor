@@ -1,11 +1,11 @@
 {
   "name": "table-editor",
   "description": "edit tabular data.",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "repository": {
     "url": "git://github.com/sethvincent/table-editor.git"
   },
-  "main": "index.js",
+  "main": "table-editor.min.js",
   "scripts": {
     "test": "",
     "watch-js": "watchify example.js -o bundle.js -t brfs",
@@ -13,10 +13,11 @@
     "start": "serve & npm run watch-js"
   },
   "dependencies": {
-    "lodash.template": "^2.4.1",
+    "component-emitter": "^1.1.3",
     "domify": "^1.2.2",
-    "attr-chooser": "^2.0.0",
-    "inherits": "^2.0.1"
+    "flat": "^1.2.1",
+    "inherits": "^2.0.1",
+    "ractive": "^0.4.0"
   },
   "devDependencies": {
     "uglify-js": "^2.4.13",
