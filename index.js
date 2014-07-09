@@ -2,6 +2,8 @@ var fs = require('fs');
 var Emitter = require('component-emitter');
 var inherits = require('inherits');
 var View = require('ractive');
+var flatten = require('flat');
+var extend = require('extend');
 
 module.exports = TableEditor;
 Emitter(TableEditor.prototype);
@@ -19,13 +21,15 @@ function TableEditor (id, data, tableTemplate, rowTemplate) {
     data: this.data
   });
 
-  this.tableView.on('change', function (data) {
-    self.emit('change', data);
+  this.tableView.on('change', function (value) {
+    var change = flatten.unflatten(value);
+    self.data = extend(true, self.data, change);
+    self.emit('change', change, self.data);
   });
 }
 
 TableEditor.prototype.addRow = function () {
-  
+
 };
 
 TableEditor.prototype.addColumn = function () {

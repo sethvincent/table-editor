@@ -14,6 +14,6 @@ var rows = [
 
 var editor = new TableEditor('main-content', { headers: headers, rows: rows });
 
-editor.on('change', function(data){
-  console.log(data);
+editor.on('change', function(change, data){
+  console.log(change, data);
 });
