@@ -30,8 +30,8 @@ var rows = [
 
 var editor = new TableEditor('main-content', { headers: headers, rows: rows });
 
-editor.on('change', function(value, column, i, rows, ev){
-  console.log(value, column, i, rows, ev);
+editor.on('change', function(data){
+  console.log(data);
 });
 ```
 
