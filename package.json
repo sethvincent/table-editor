@@ -1,11 +1,11 @@
 {
   "name": "table-editor",
   "description": "edit tabular data.",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "repository": {
     "url": "git://github.com/sethvincent/table-editor.git"
   },
-  "main": "table-editor.min.js",
+  "main": "table-editor.js",
   "scripts": {
     "test": "tape test.js",
     "watch-js": "watchify example.js -o bundle.js -t brfs",
