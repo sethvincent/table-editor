@@ -1,13 +1,13 @@
 {
   "name": "table-editor",
   "description": "edit tabular data.",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "repository": {
     "url": "git://github.com/sethvincent/table-editor.git"
   },
   "main": "table-editor.min.js",
   "scripts": {
-    "test": "",
+    "test": "tape test.js",
     "watch-js": "watchify example.js -o bundle.js -t brfs",
     "bundle": "browserify index.js -s TableEditor -o table-editor.min.js && uglifyjs table-editor.min.js -o table-editor.min.js",
     "start": "serve & npm run watch-js"
@@ -21,6 +21,7 @@
     "ractive": "^0.4.0"
   },
   "devDependencies": {
+    "tape": "^2.13.3",
     "uglify-js": "^2.4.13",
     "brfs": "^1.1.1",
     "browserify": "^4.1.6",

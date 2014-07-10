@@ -28,10 +28,23 @@ function TableEditor (id, data, tableTemplate, rowTemplate) {
   });
 }
 
-TableEditor.prototype.addRow = function () {
-
+TableEditor.prototype.addRow = function (row) {
+  if (row) this.data.rows.push(row);
+  else this.data.rows.push(this.emptyRow());
 };
 
-TableEditor.prototype.addColumn = function () {
-
+TableEditor.prototype.addColumn = function (header) {
+  this.data.rows.forEach(function(row, i) {
+    row[header.name] = null;
+  });
+  this.data.headers.push(header);
+  this.tableView.update();
 };
+
+TableEditor.prototype.emptyRow = function () {
+  var obj = {};
+  this.data.headers.forEach(function (header) {
+    obj[header.name] = null;
+  });
+  return obj;
+}

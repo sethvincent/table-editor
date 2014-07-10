@@ -17,3 +17,17 @@ var editor = new TableEditor('main-content', { headers: headers, rows: rows });
 editor.on('change', function(change, data){
   console.log(change, data);
 });
+
+var addRow = document.getElementById('add-row');
+addRow.addEventListener('click', function (e) {
+  console.log('add row', e);
+  editor.addRow();
+});
+
+var i = 0;
+var addColumn = document.getElementById('add-column');
+addColumn.addEventListener('click', function (e) {
+  console.log('add column', e);
+  editor.addColumn({ name: 'pizza ' + i, type: 'string' });
+  i++;
+});
