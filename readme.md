@@ -7,7 +7,7 @@
 npm install --save table-editor
 ```
 
-It's designed for use with browserify, but you can alternatively grab the `table-editor.min.js` file.
+It's designed for use with browserify, but you can alternatively grab the `table-editor.js` file.
 
 ## Usage
 
@@ -40,6 +40,9 @@ editor.on('change', function(change, data){
 Look at the [example.js](https://github.com/sethvincent/table-editor/blob/master/example.js) and [index.html](https://github.com/sethvincent/table-editor/blob/master/index.html) files for example usage that includes add row and add column buttons.
 
 You can see the example in action here: http://sethvincent.github.io/table-editor/
+
+## Contributing
+The table-editor.js file is bundled for each release. Edit the index.js file.
 
 ## License
 MIT
