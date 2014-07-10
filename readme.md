@@ -35,5 +35,9 @@ editor.on('change', function(data){
 });
 ```
 
+## Example
+
+Look at the [example.js](https://github.com/sethvincent/table-editor/blob/master/example.js) and [index.html](https://github.com/sethvincent/table-editor/blob/master/index.html) files for example usage that includes add row and add column buttons.
+
 ## License
 MIT
