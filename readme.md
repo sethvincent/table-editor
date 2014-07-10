@@ -1,5 +1,5 @@
 # table-editor
-> a module for creating a (very) simple spreadsheet-style editor
+> a module for creating a very simple editor for tabular data.
 
 ## Install
 
@@ -30,14 +30,16 @@ var rows = [
 
 var editor = new TableEditor('main-content', { headers: headers, rows: rows });
 
-editor.on('change', function(data){
-  console.log(data);
+editor.on('change', function(change, data){
+  console.log(change, data);
 });
 ```
 
 ## Example
 
 Look at the [example.js](https://github.com/sethvincent/table-editor/blob/master/example.js) and [index.html](https://github.com/sethvincent/table-editor/blob/master/index.html) files for example usage that includes add row and add column buttons.
+
+You can see the example in action here: http://sethvincent.github.io/table-editor/
 
 ## License
 MIT

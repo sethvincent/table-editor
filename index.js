@@ -28,8 +28,9 @@ function TableEditor (id, data, tableTemplate, rowTemplate) {
 }
 
 TableEditor.prototype.addRow = function (row) {
-  if (row) this.data.rows.push(row);
-  else this.data.rows.push(this.emptyRow());
+  row || (row = {});
+  var newRow = extend(this.emptyRow(), row);
+  this.data.rows.push(newRow);
 };
 
 TableEditor.prototype.addColumn = function (header) {

@@ -35,7 +35,6 @@ addColumn.addEventListener('click', function (e) {
 },{"./index":2}],2:[function(require,module,exports){
 
 var Emitter = require('component-emitter');
-var inherits = require('inherits');
 var View = require('ractive');
 var flatten = require('flat');
 var extend = require('extend');
@@ -64,8 +63,9 @@ function TableEditor (id, data, tableTemplate, rowTemplate) {
 }
 
 TableEditor.prototype.addRow = function (row) {
-  if (row) this.data.rows.push(row);
-  else this.data.rows.push(this.emptyRow());
+  row || (row = {});
+  var newRow = extend(this.emptyRow(), row);
+  this.data.rows.push(newRow);
 };
 
 TableEditor.prototype.addColumn = function (header) {
@@ -83,7 +83,7 @@ TableEditor.prototype.emptyRow = function () {
   });
   return obj;
 }
-},{"component-emitter":3,"extend":4,"flat":5,"inherits":6,"ractive":7}],3:[function(require,module,exports){
+},{"component-emitter":3,"extend":4,"flat":5,"ractive":6}],3:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -421,31 +421,6 @@ function unflatten(target, opts) {
 }
 
 },{}],6:[function(require,module,exports){
-if (typeof Object.create === 'function') {
-  // implementation from standard node.js 'util' module
-  module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    ctor.prototype = Object.create(superCtor.prototype, {
-      constructor: {
-        value: ctor,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-  };
-} else {
-  // old school shim for old browsers
-  module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    var TempCtor = function () {}
-    TempCtor.prototype = superCtor.prototype
-    ctor.prototype = new TempCtor()
-    ctor.prototype.constructor = ctor
-  }
-}
-
-},{}],7:[function(require,module,exports){
 /*
 	Ractive.js v0.4.0
 	2014-04-08 - commit 276c0e2b
