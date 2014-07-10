@@ -1,6 +1,5 @@
 var fs = require('fs');
 var Emitter = require('component-emitter');
-var inherits = require('inherits');
 var View = require('ractive');
 var flatten = require('flat');
 var extend = require('extend');
