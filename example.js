@@ -1,4 +1,4 @@
-var TableEditor = require('./table-editor.js');
+var TableEditor = require('./index');
 
 var headers = [
   { name: 'wat', type: 'string' },
