@@ -3,6 +3,7 @@ var Emitter = require('component-emitter');
 var View = require('ractive');
 var flatten = require('flat');
 var extend = require('extend');
+var convert = require('json-2-csv').json2csv;
 
 module.exports = TableEditor;
 Emitter(TableEditor.prototype);
@@ -33,6 +34,16 @@ TableEditor.prototype.get = function (key) {
 
 TableEditor.prototype.set = function (key, value) {
   return this.tableView.set(key, value);
+};
+
+TableEditor.prototype.getJSON = function (cb) {
+  cb(this.data.rows);
+};
+
+TableEditor.prototype.getCSV = function (cb) {
+  convert(this.data.rows, function (err, csv) {
+    cb(csv)
+  });
 };
 
 TableEditor.prototype.addRow = function (row) {
