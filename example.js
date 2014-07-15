@@ -24,7 +24,6 @@ editor.on('change', function(change, data){
 
 var addRow = document.getElementById('add-row');
 addRow.addEventListener('click', function (e) {
-  console.log('add row', e);
   editor.addRow();
 });
 
