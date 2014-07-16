@@ -3,6 +3,7 @@ var Emitter = require('component-emitter');
 var View = require('ractive');
 var flatten = require('flat');
 var extend = require('extend');
+var convert = require('json-2-csv').json2csv;
 
 module.exports = TableEditor;
 Emitter(TableEditor.prototype);
@@ -27,10 +28,34 @@ function TableEditor (id, data, tableTemplate, rowTemplate) {
   });
 }
 
+TableEditor.prototype.get = function (key) {
+  return this.tableView.get(key);
+};
+
+TableEditor.prototype.set = function (key, value) {
+  return this.tableView.set(key, value);
+};
+
+TableEditor.prototype.getJSON = function (cb) {
+  cb(this.data.rows);
+};
+
+TableEditor.prototype.getCSV = function (cb) {
+  convert(this.data.rows, function (err, csv) {
+    cb(csv)
+  });
+};
+
 TableEditor.prototype.addRow = function (row) {
   row || (row = {});
   var newRow = extend(this.emptyRow(), row);
   this.data.rows.push(newRow);
+};
+
+TableEditor.prototype.deleteRow = function (index) {
+  this.data.rows.forEach(function(row, i) {
+    if (index = i) this.data.rows[i].pop();
+  });
 };
 
 TableEditor.prototype.addColumn = function (header) {
@@ -47,4 +72,10 @@ TableEditor.prototype.emptyRow = function () {
     obj[header.name] = null;
   });
   return obj;
-}
+};
+
+TableEditor.prototype.changeColumnName = function (oldKey, newKey) {
+  this.data.headers[newKey] = this.data.headers[oldKey];
+  delete this.data.headers[oldKey];
+  this.tableView.update();
+};
