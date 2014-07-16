@@ -16,19 +16,18 @@ Here's a basic example:
 ```js
 var TableEditor = require('table-editor');
 
-var headers = [
-  { name: 'wat', type: 'string' },
-  { name: 'pizza', type: 'string' },
-  { name: 'poop', type: 'string' }
-];
+var data = {
+  headers: [
+    { name: 'example', type: 'string' }
+  ],
+  rows: [
+    { example: null },
+    { example: null },
+    { example: null }
+  ]
+};
 
-var rows = [
-  { wat: 'weeee', pizza: 'wokowokow', poop: 'ok' },
-  { wat: 'pooooo', pizza: 'wokowokow', poop: 'ok' },
-  { wat: 'okkkkkk', pizza: 'wokowokow', poop: 'ok' }
-];
-
-var editor = new TableEditor('main-content', { headers: headers, rows: rows });
+var editor = new TableEditor('main-content', data);
 
 editor.on('change', function(change, data){
   console.log(change, data);

@@ -13,7 +13,7 @@ function TableEditor (id, data, tableTemplate, rowTemplate) {
   if (!(this instanceof TableEditor)) return new TableEditor(id, data, tableTemplate, rowTemplate);
   var self = this;
 
-  this.data = data;
+  this.data = data || { headers: [], rows: [] };
   this.tableTemplate = tableTemplate || "<table id=\"table-editor\">\n  <thead>\n    <tr>\n      {{#headers:key}}\n        <th>{{name}}</th>\n      {{/headers}}\n    </tr>\n  </thead>\n  <tbody>\n    {{#rows:i}}\n    <tr class=\"{{ i }}\">\n      {{#this:value}}\n      <td class=\"{{value}}\">\n        <textarea chooser=\"cell\" value=\"{{this}}\"></textarea>\n      </td>\n      {{/.}}\n    </tr>\n    {{/rows}}\n  </tbody>\n</table>\n";
 
   this.tableView = new View({
@@ -79,6 +79,14 @@ TableEditor.prototype.changeColumnName = function (oldKey, newKey) {
   this.data.headers[newKey] = this.data.headers[oldKey];
   delete this.data.headers[oldKey];
   this.tableView.update();
+};
+
+TableEditor.prototype.update = function () {
+  this.tableView.update();
+};
+
+TableEditor.prototype.reset = function (data) {
+  this.set(data || { headers: [], rows: [] });
 };
 },{"component-emitter":3,"extend":4,"flat":5,"json-2-csv":6,"ractive":11}],2:[function(_dereq_,module,exports){
 // shim for using process in browser

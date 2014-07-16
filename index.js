@@ -12,7 +12,7 @@ function TableEditor (id, data, tableTemplate, rowTemplate) {
   if (!(this instanceof TableEditor)) return new TableEditor(id, data, tableTemplate, rowTemplate);
   var self = this;
 
-  this.data = data;
+  this.data = data || { headers: [], rows: [] };
   this.tableTemplate = tableTemplate || fs.readFileSync('./templates/table.html', 'utf8');
 
   this.tableView = new View({
@@ -78,4 +78,12 @@ TableEditor.prototype.changeColumnName = function (oldKey, newKey) {
   this.data.headers[newKey] = this.data.headers[oldKey];
   delete this.data.headers[oldKey];
   this.tableView.update();
+};
+
+TableEditor.prototype.update = function () {
+  this.tableView.update();
+};
+
+TableEditor.prototype.reset = function (data) {
+  this.set(data || { headers: [], rows: [] });
 };

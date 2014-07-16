@@ -8,7 +8,7 @@
   "main": "table-editor.js",
   "scripts": {
     "test": "tape test.js",
-    "watch-js": "watchify example.js -o bundle.js -t brfs",
+    "watch-js": "watchify -t brfs index.js -s TableEditor -o table-editor.js",
     "bundle": "browserify -t brfs index.js -s TableEditor -o table-editor.js",
     "start": "serve & npm run watch-js"
   },
@@ -22,10 +22,6 @@
   "devDependencies": {
     "brfs": "^1.1.1",
     "browserify": "^4.1.6",
-    "csv": "^0.4.0",
-    "element-class": "^0.1.1",
-    "jsonpretty": "0.0.1",
-    "serve": "^1.4.0",
     "tape": "^2.13.3",
     "uglify-js": "^2.4.13",
     "watchify": "^0.10.1"
