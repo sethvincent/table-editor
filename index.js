@@ -8,20 +8,20 @@ var convert = require('json-2-csv').json2csv;
 module.exports = TableEditor;
 Emitter(TableEditor.prototype);
 
-function TableEditor (id, data, tableTemplate, rowTemplate) {
+function TableEditor (id, data, tableTemplate) {
   if (!(this instanceof TableEditor)) return new TableEditor(id, data, tableTemplate, rowTemplate);
   var self = this;
 
   this.data = data || { headers: [], rows: [] };
   this.tableTemplate = tableTemplate || fs.readFileSync('./templates/table.html', 'utf8');
 
-  this.tableView = new View({
+  this.view = new View({
     el: id,
     template: View.parse(this.tableTemplate),
     data: this.data
   });
 
-  this.tableView.on('change', function (value) {
+  this.view.on('change', function (value) {
     var change = flatten.unflatten(value);
     self.data = extend(true, self.data, change);
     self.emit('change', change, self.data);
@@ -29,11 +29,11 @@ function TableEditor (id, data, tableTemplate, rowTemplate) {
 }
 
 TableEditor.prototype.get = function (key) {
-  return this.tableView.get(key);
+  return this.view.get(key);
 };
 
 TableEditor.prototype.set = function (key, value) {
-  return this.tableView.set(key, value);
+  return this.view.set(key, value);
 };
 
 TableEditor.prototype.getJSON = function (cb) {
@@ -63,7 +63,36 @@ TableEditor.prototype.addColumn = function (header) {
     row[header.name] = null;
   });
   this.data.headers.push(header);
-  this.tableView.update();
+  this.update();
+};
+
+TableEditor.prototype.deleteColumn = function (name) {
+  var self = this;
+
+  this.data.rows.forEach(function(row, i) {
+    delete self.data.rows[i][name];
+  });
+
+  this.data.headers.forEach(function(header, i) {
+    if (header.name === name) self.data.headers.splice(i, 1);
+  });
+
+  this.update();
+};
+
+TableEditor.prototype.renameColumn = function (oldKey, newKey) {
+  var self = this;
+
+  this.data.headers.forEach(function(header, i) {
+    if (header.name === oldKey) header.name = newKey;
+  });
+
+  this.data.rows.forEach(function(row, i) {
+    row[newKey] = row[oldKey];
+    delete row[oldKey];
+  });
+
+  this.update();
 };
 
 TableEditor.prototype.emptyRow = function () {
@@ -74,14 +103,9 @@ TableEditor.prototype.emptyRow = function () {
   return obj;
 };
 
-TableEditor.prototype.changeColumnName = function (oldKey, newKey) {
-  this.data.headers[newKey] = this.data.headers[oldKey];
-  delete this.data.headers[oldKey];
-  this.tableView.update();
-};
-
 TableEditor.prototype.update = function () {
-  this.tableView.update();
+  this.emit('change', '', this.data);
+  this.view.update();
 };
 
 TableEditor.prototype.reset = function (data) {
