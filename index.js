@@ -53,8 +53,10 @@ TableEditor.prototype.addRow = function (row) {
 };
 
 TableEditor.prototype.deleteRow = function (index) {
+  var self = this;
+
   this.data.rows.forEach(function(row, i) {
-    if (index = i) this.data.rows[i].pop();
+    if (index == i) return self.data.rows.splice(index, 1);
   });
 };
 

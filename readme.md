@@ -9,9 +9,10 @@ npm install --save table-editor
 
 It's designed for use with browserify, but you can alternatively grab the `table-editor.js` file.
 
-## Usage
+## Examples
 
-Here's a basic example:
+
+### Simple example:
 
 ```js
 var TableEditor = require('table-editor');
@@ -34,14 +35,24 @@ editor.on('change', function(change, data){
 });
 ```
 
-## Example
+Make sure your index.html file has a div with an id of `#main-content`.
 
-Look at the [example.js](https://github.com/sethvincent/table-editor/blob/master/example.js) and [index.html](https://github.com/sethvincent/table-editor/blob/master/index.html) files for example usage that includes add row and add column buttons.
+## Extended example
 
-You can see the example in action here: http://sethvincent.github.io/table-editor/
+This module is being created specifically for this project: http://github.com/flatsheet/editor
+
+Check out that repo for an extended example of table-editor usage, including an alternate table template and pretty much full usage of the table-editor API.
+
+You can see the flatsheet example in action here: http://flatsheet.io/editor
 
 ## Contributing
-The table-editor.js file is bundled for each release. Edit the index.js file.
+Note: The table-editor.js file is bundled for each release. Edit the index.js file.
+
+- Fork this repository
+- Create your feature branch: `git checkout -b new-feature`
+- Commit your changes: `git commit -m 'Add new feature'`
+- Push to the branch: `git push origin new-feature`
+- Submit a pull request via GitHub
 
 ## License
 MIT
