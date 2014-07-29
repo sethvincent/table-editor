@@ -107,13 +107,14 @@ TableEditor.prototype.emptyRow = function () {
 };
 
 TableEditor.prototype.update = function () {
-  this.emit('change', '', this.data);
+  this.emit('change', this.data);
   this.view.update();
 };
 
 TableEditor.prototype.reset = function (data) {
   this.set(data || { headers: [], rows: [] });
 };
+
 },{"component-emitter":3,"extend":4,"flat":5,"json-2-csv":6,"ractive":11}],2:[function(_dereq_,module,exports){
 // shim for using process in browser
 

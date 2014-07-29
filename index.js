@@ -106,7 +106,7 @@ TableEditor.prototype.emptyRow = function () {
 };
 
 TableEditor.prototype.update = function () {
-  this.emit('change', '', this.data);
+  this.emit('change', this.data);
   this.view.update();
 };
 
