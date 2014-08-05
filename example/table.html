@@ -1,0 +1,20 @@
+<table id="table-editor">
+  <thead>
+    <tr>
+      {{#each columns}}
+        <th><input value="{{name}}"/></th>
+      {{/each}}
+    </tr>
+  </thead>
+  <tbody>
+    {{#each rows:i}}
+    <tr class="{{ i }}">
+      {{#each columns}}
+      <td>
+        <textarea value="{{rows[i][id]}}"></textarea>
+      </td>
+      {{/each}}
+    </tr>
+    {{/each}}
+  </tbody>
+</table>

@@ -1,115 +1,90 @@
-var fs = require('fs');
-var Emitter = require('component-emitter');
 var View = require('ractive');
-var flatten = require('flat');
-var extend = require('extend');
-var convert = require('json-2-csv').json2csv;
+var uid = 0;
 
-module.exports = TableEditor;
-Emitter(TableEditor.prototype);
+module.exports = View.extend({
 
-function TableEditor (id, data, tableTemplate) {
-  if (!(this instanceof TableEditor)) return new TableEditor(id, data, tableTemplate, rowTemplate);
-  var self = this;
+  init: function (opts) {
+    this.template = View.parse(opts.template);
+    this.set(uid, 0);
+  },
 
-  this.data = data || { headers: [], rows: [] };
-  this.tableTemplate = tableTemplate || fs.readFileSync('./templates/table.html', 'utf8');
+  import: function (items) {
+    var columns = [];
+    var columnIdByName = {};
 
-  this.view = new View({
-    el: id,
-    template: View.parse(this.tableTemplate),
-    data: this.data
-  });
+    items.forEach( function ( record ) {
+      Object.keys( record ).forEach( function ( name ) {
+        var columnId;
 
-  this.view.on('change', function (value) {
-    var change = flatten.unflatten(value);
-    self.data = extend(true, self.data, change);
-    self.emit('change', change, self.data);
-  });
-}
+        if (!columnIdByName[name]) {
+          columnId = '_' + uid++;
+          columnIdByName[name] = columnId;
 
-TableEditor.prototype.get = function (key) {
-  return this.view.get(key);
-};
+          columns.push({
+            id: columnId,
+            name: name,
 
-TableEditor.prototype.set = function (key, value) {
-  return this.view.set(key, value);
-};
+            // TODO infer type, sensible default value
+            type: 'string',
+            defaultValue: function () { return null; }
+          });
+        }
+      });
+    });
 
-TableEditor.prototype.getJSON = function (cb) {
-  cb(this.data.rows);
-};
+    rows = items.map(function (item) {
+      var row = {};
 
-TableEditor.prototype.getCSV = function (cb) {
-  convert(this.data.rows, function (err, csv) {
-    cb(csv)
-  });
-};
+      Object.keys(item).forEach(function (name) {
+        row[columnIdByName[name]] = record[name];
+      });
 
-TableEditor.prototype.addRow = function (row) {
-  row || (row = {});
-  var newRow = extend(this.emptyRow(), row);
-  this.data.rows.push(newRow);
-};
+      return row;
+    });
 
-TableEditor.prototype.deleteRow = function (index) {
-  var self = this;
+    this.set({
+      columns: columns,
+      columnIdByName: columnIdByName,
+      rows: rows
+    });
+  },
 
-  this.data.rows.forEach(function(row, i) {
-    if (index == i) return self.data.rows.splice(index, 1);
-  });
-};
+  reset: function () {
+    this.set({ headers: [], rows: [] });
+  },
 
-TableEditor.prototype.addColumn = function (header) {
-  this.data.rows.forEach(function(row, i) {
-    row[header.name] = null;
-  });
-  this.data.headers.push(header);
-  this.update();
-};
+  addColumn: function (column) {
 
-TableEditor.prototype.deleteColumn = function (name) {
-  var self = this;
+  },
 
-  this.data.rows.forEach(function(row, i) {
-    delete self.data.rows[i][name];
-  });
+  addColumns: function (columns) {
+    columns.forEach( function (column) {
+      Object.keys(column).forEach(function (name) {
+        var id;
 
-  this.data.headers.forEach(function(header, i) {
-    if (header.name === name) self.data.headers.splice(i, 1);
-  });
 
-  this.update();
-};
+      });
+    });
+  },
 
-TableEditor.prototype.renameColumn = function (oldKey, newKey) {
-  var self = this;
+  destroyColumn: function (id) {
 
-  this.data.headers.forEach(function(header, i) {
-    if (header.name === oldKey) header.name = newKey;
-  });
+  },
 
-  this.data.rows.forEach(function(row, i) {
-    row[newKey] = row[oldKey];
-    delete row[oldKey];
-  });
+  addRow: function (row) {
 
-  this.update();
-};
+  },
 
-TableEditor.prototype.emptyRow = function () {
-  var obj = {};
-  this.data.headers.forEach(function (header) {
-    obj[header.name] = null;
-  });
-  return obj;
-};
+  addRows: function (rows) {
 
-TableEditor.prototype.update = function () {
-  this.emit('change', this.data);
-  this.view.update();
-};
+  },
 
-TableEditor.prototype.reset = function (data) {
-  this.set(data || { headers: [], rows: [] });
-};
+  destroyRow: function (index) {
+
+  },
+
+  toJSON: function (cb) {
+
+  }
+
+});

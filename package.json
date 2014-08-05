@@ -8,22 +8,21 @@
   "main": "table-editor.js",
   "scripts": {
     "test": "tape test.js",
-    "watch-js": "watchify -t brfs index.js -s TableEditor -o table-editor.js",
-    "bundle": "browserify -t brfs index.js -s TableEditor -o table-editor.js",
-    "start": "serve & npm run watch-js"
+    "example": "beefy example/index.js --live --index example/index.html -- -t brfs",
+    "bundle": "browserify index.js -s TableEditor -o table-editor.min.js",
+    "start": "npm run watch"
   },
   "dependencies": {
+    "brfs": "^1.2.0",
     "component-emitter": "^1.1.3",
     "extend": "^1.3.0",
     "flat": "^1.2.1",
-    "json-2-csv": "^0.1.3",
-    "ractive": "^0.4.0"
+    "ractive": "^0.5.5"
   },
   "devDependencies": {
-    "brfs": "^1.1.1",
+    "beefy": "^2.1.0",
     "browserify": "^4.1.6",
     "tape": "^2.13.3",
-    "uglify-js": "^2.4.13",
     "watchify": "^0.10.1"
   }
 }
