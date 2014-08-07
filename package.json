@@ -1,28 +1,26 @@
 {
   "name": "table-editor",
   "description": "edit tabular data.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "url": "git://github.com/sethvincent/table-editor.git"
   },
-  "main": "table-editor.js",
+  "main": "index.js",
   "scripts": {
     "test": "tape test.js",
     "example": "beefy example/index.js --live --index example/index.html -- -t brfs",
-    "bundle": "browserify index.js -s TableEditor -o table-editor.min.js",
+    "bundle": "browserify index.js -s TableEditor -o table-editor.js",
     "start": "npm run watch"
   },
   "dependencies": {
-    "brfs": "^1.2.0",
-    "component-emitter": "^1.1.3",
-    "extend": "^1.3.0",
-    "flat": "^1.2.1",
     "ractive": "^0.5.5"
   },
   "devDependencies": {
+    "brfs": "^1.2.0",
     "beefy": "^2.1.0",
     "browserify": "^4.1.6",
     "component-delegate": "^0.2.3",
+    "minifyify": "^4.0.3",
     "tape": "^2.13.3",
     "watchify": "^0.10.1"
   }
