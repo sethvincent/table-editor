@@ -1,19 +1,15 @@
 var test = require('tape');
 var TableEditor = require('./index');
 
-var headers = [
-  { name: 'wat', type: 'string' },
-  { name: 'pizza', type: 'string' },
-  { name: 'poop', type: 'string' }
-];
+var editor = new TableEditor({
+  el: 'container'
+});
 
-var rows = [
-  { wat: 'weeee', pizza: 'wokowokow', poop: 'ok' },
-  { wat: 'pooooo', pizza: 'wokowokow', poop: 'ok' },
-  { wat: 'okkkkkk', pizza: 'wokowokow', poop: 'ok' }
-];
-
-var editor = new TableEditor('main-content', { headers: headers, rows: rows });
+editor.import([
+  { example: 'weeeee', wat: 'wooooo' },
+  { example: 'weeeee', wat: 'wooooo' },
+  { example: 'weeeee', wat: 'wooooo' }
+]);
 
 test('create editor', function (t) {
   t.plan(1);
@@ -22,22 +18,31 @@ test('create editor', function (t) {
 
 test('get a value', function (t) {
   t.plan(1);
-  t.equals(editor.get('headers.0.name'), 'wat');
+  t.equals(editor.get('columns.0.name'), 'example');
 });
 
 test('set a value', function (t) {
   t.plan(1);
-  editor.set('headers.1.name', 'woohoo').then( function () {
-    t.equals(editor.get('headers.1.name'), 'woohoo');
+  editor.set('columns.1.name', 'woohoo').then(function () {
+    t.equals(editor.get('columns.1.name'), 'woohoo');
   });
 });
 
 test('watch for changes', function (t) {
   t.plan(1);
-  var ed = new TableEditor('main-content', { headers: headers, rows: rows });
+  var ed = new TableEditor({
+    el: 'container'
+  });
+
+  ed.import([
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ]);
 
   ed.on('change', function(change, data){
-    t.equals(change.rows[0].wat, 'testing');
+    t.equals(change['rows.0.wat'], 'testing');
   });
+
   ed.set('rows.0.wat', 'testing');
 });
