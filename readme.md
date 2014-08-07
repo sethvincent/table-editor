@@ -15,27 +15,38 @@ It's designed for use with browserify, but you can alternatively grab the `table
 ### Simple example:
 
 ```js
-var TableEditor = require('table-editor');
+var fs = require('fs');
+var on = require('component-delegate').bind;
+var TableEditor = require('../index');
+var template = fs.readFileSync(__dirname + '/table.html', 'utf8');
 
-var data = {
-  headers: [
-    { name: 'example', type: 'string' }
-  ],
-  rows: [
-    { example: null },
-    { example: null },
-    { example: null }
-  ]
-};
-
-var editor = new TableEditor('main-content', data);
-
-editor.on('change', function(data){
-  console.log(data);
+var editor = new TableEditor({
+  el: 'container',
+  template: template,
 });
+
+editor.import([
+  { example: 'weeeee', wat: 'wooooo' },
+  { example: 'weeeee', wat: 'wooooo' },
+  { example: 'weeeee', wat: 'wooooo' }
+]);
+
+editor.on('change', function (change) {
+  console.log(editor.data.rows);
+});
+
+on(document.body, '#add-row', 'click', function(e) {
+  editor.addRow();
+});
+
+on(document.body, '#add-column', 'click', function(e) {
+  var name = window.prompt('New column name');
+  editor.addColumn({ name: name, type: 'string' });
+});
+
 ```
 
-Make sure your index.html file has a div with an id of `#main-content`.
+Check out the rest of the above example, including an index.html file and the table.html template in the `example` folder in this repo.
 
 ## Extended example
 
