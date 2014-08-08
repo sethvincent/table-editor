@@ -22,10 +22,8 @@ module.exports = View.extend({
           columns.push({
             id: columnId,
             name: name,
-
-            // TODO infer type, sensible default value
             type: 'string',
-            defaultValue: function () { return null; }
+            defaultValue: function () { return ''; }
           });
         }
       });
@@ -137,6 +135,8 @@ module.exports = View.extend({
 
       ret.push(newRow);
     });
+
     return JSON.stringify(ret);
   }
+
 });
