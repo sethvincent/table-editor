@@ -4,7 +4,7 @@ var TableEditor = require('../index');
 var template = fs.readFileSync(__dirname + '/table.html', 'utf8');
 
 var editor = new TableEditor({
-  el: 'container',
+  el: 'editor',
   template: template,
 });
 
@@ -14,8 +14,10 @@ editor.import([
   { example: 'weeeee', wat: 'wooooo' }
 ]);
 
+var dump = document.getElementById('json-dump');
+
 editor.on('change', function (change) {
-  console.log(editor.data.rows);
+  dump.value = editor.toJSON();
 });
 
 on(document.body, '#add-row', 'click', function(e) {

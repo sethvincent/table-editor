@@ -21,7 +21,7 @@ var TableEditor = require('../index');
 var template = fs.readFileSync(__dirname + '/table.html', 'utf8');
 
 var editor = new TableEditor({
-  el: 'container',
+  el: 'editor',
   template: template,
 });
 

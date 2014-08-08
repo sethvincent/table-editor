@@ -50,18 +50,26 @@ module.exports = View.extend({
 
   addColumn: function (column) {
     var changes = {};
+    var id = '_' + uid++;
 
     this.push('columns', {
-      id: '_' + uid++,
+      id: id,
       name: column.name,
       type: column.type || 'string'
     });
 
-    this.get('rows').forEach(function (row, i) {
-      changes[ 'rows[' + i + '].' + id] = null;
-    });
+    var rows = this.get('rows');
 
-    this.set(changes);
+    if (rows.length > 0) {
+      rows.forEach(function (row, i) {
+        changes['rows[' + i + '].' + id] = '';
+      });
+      this.set(changes);
+    }
+
+    else {
+      this.addRow();
+    }
   },
 
   addColumns: function (columns) {
@@ -89,7 +97,7 @@ module.exports = View.extend({
   addRow: function () {
     var row = {};
     this.get('columns').forEach(function (column) {
-      row[column.id] = null;
+      row[column.id] = '';
     });
     this.push('rows', row);
   },
@@ -108,8 +116,27 @@ module.exports = View.extend({
     });
   },
 
+  clear: function () {
+    this.set('columns', []);
+    this.set('rows', []);
+    this.set('columnIdByName', {});
+  },
+
   toJSON: function (cb) {
+    var ret = [];
+    var rows = this.get('rows');
+    var columns = this.get('columns');
+    var columnIdByName = this.get('columnIdByName');
 
+    rows.forEach(function (row, i) {
+      var newRow = {};
+
+      columns.forEach(function(column) {
+        newRow[column.name] = row[column.id];
+      });
+
+      ret.push(newRow);
+    });
+    return JSON.stringify(ret);
   }
-
 });
