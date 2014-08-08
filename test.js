@@ -46,3 +46,17 @@ test('watch for changes', function (t) {
 
   ed.set('rows.0.wat', 'testing');
 });
+
+test('toJSON should export stringified JSON in format it was imported', function (t) {
+  t.plan(1);
+  var ed = new TableEditor();
+
+  var data = [
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ];
+
+  ed.import(data);
+  t.deepEqual(ed.toJSON(), JSON.stringify(data));
+});
