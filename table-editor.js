@@ -1,4 +1,6 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.TableEditor=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+(function (process){
+var removeElement = _dereq_('remove-element');
 var View = _dereq_('ractive');
 var uid = 0;
 
@@ -23,10 +25,8 @@ module.exports = View.extend({
           columns.push({
             id: columnId,
             name: name,
-
-            // TODO infer type, sensible default value
             type: 'string',
-            defaultValue: function () { return null; }
+            defaultValue: function () { return ''; }
           });
         }
       });
@@ -51,18 +51,26 @@ module.exports = View.extend({
 
   addColumn: function (column) {
     var changes = {};
+    var id = '_' + uid++;
 
     this.push('columns', {
-      id: '_' + uid++,
+      id: id,
       name: column.name,
       type: column.type || 'string'
     });
 
-    this.get('rows').forEach(function (row, i) {
-      changes[ 'rows[' + i + '].' + id] = null;
-    });
+    var rows = this.get('rows');
 
-    this.set(changes);
+    if (rows.length > 0) {
+      rows.forEach(function (row, i) {
+        changes['rows[' + i + '].' + id] = '';
+      });
+      this.set(changes);
+    }
+
+    else {
+      this.addRow();
+    }
   },
 
   addColumns: function (columns) {
@@ -73,7 +81,8 @@ module.exports = View.extend({
   },
 
   destroyColumn: function (id) {
-    var id = '_' + id;
+    if (process.env.browser) removeElement(document.getElementById(id));
+
     var columns = this.get('columns');
     columns.forEach(function (column, i) {
       if (id === column.id) delete columns[i];
@@ -90,7 +99,7 @@ module.exports = View.extend({
   addRow: function () {
     var row = {};
     this.get('columns').forEach(function (column) {
-      row[column.id] = null;
+      row[column.id] = '';
     });
     this.push('rows', row);
   },
@@ -105,17 +114,104 @@ module.exports = View.extend({
   destroyRow: function (index) {
     var rows = this.get('rows');
     rows.forEach(function (row, i) {
-      if (index === i) rows.splice(index, 1);
+      if (parseInt(index) === i) rows.splice(index, 1);
     });
   },
 
-  toJSON: function (cb) {
+  clear: function () {
+    this.set('columns', []);
+    this.set('rows', []);
+    this.set('columnIdByName', {});
+  },
 
+  toJSON: function (cb) {
+    var ret = [];
+    var rows = this.get('rows');
+    var columns = this.get('columns');
+    var columnIdByName = this.get('columnIdByName');
+
+    rows.forEach(function (row, i) {
+      var newRow = {};
+
+      columns.forEach(function(column) {
+        newRow[column.name] = row[column.id];
+      });
+
+      ret.push(newRow);
+    });
+
+    return JSON.stringify(ret);
   }
 
 });
 
-},{"ractive":2}],2:[function(_dereq_,module,exports){
+}).call(this,_dereq_("FWaASH"))
+},{"FWaASH":2,"ractive":3,"remove-element":4}],2:[function(_dereq_,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+
+process.nextTick = (function () {
+    var canSetImmediate = typeof window !== 'undefined'
+    && window.setImmediate;
+    var canPost = typeof window !== 'undefined'
+    && window.postMessage && window.addEventListener
+    ;
+
+    if (canSetImmediate) {
+        return function (f) { return window.setImmediate(f) };
+    }
+
+    if (canPost) {
+        var queue = [];
+        window.addEventListener('message', function (ev) {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+
+        return function nextTick(fn) {
+            queue.push(fn);
+            window.postMessage('process-tick', '*');
+        };
+    }
+
+    return function nextTick(fn) {
+        setTimeout(fn, 0);
+    };
+})();
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+}
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+
+},{}],3:[function(_dereq_,module,exports){
 /*
 	ractive.js v0.5.5
 	2014-07-13 - commit 8b1d34ef 
@@ -13275,6 +13371,18 @@ module.exports = View.extend({
 	};
 
 }( typeof window !== 'undefined' ? window : this ) );
+
+},{}],4:[function(_dereq_,module,exports){
+module.exports = remove
+
+function remove(element) {
+  if (
+    element &&
+    element.parentNode
+  ) element.parentNode.removeChild(element)
+
+  return element
+}
 
 },{}]},{},[1])
 (1)
