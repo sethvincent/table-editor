@@ -3,15 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <title>table-editor example</title>
+
+<style>
+
+#json-dump {
+  width: 600px;
+  border: 1px solid #ccc;
+  padding: 20px;
+}
+
+</style>
+
 </head>
 <body>
+  <h2>The editor!:</h2>
   <div class="buttons">
     <button id="add-row">add row</button>
     <button id="add-column">add column</button>
-    <button id="reset">reset</button>
   </div>
   <div id="editor"></div>
 
+  <h2>The JSON!:</h2>
   <div id="json-dump-wrapper">
     <textarea id="json-dump" readonly></textarea>
   </div>

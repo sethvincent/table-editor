@@ -1,3 +1,4 @@
+var removeElement = require('remove-element');
 var View = require('ractive');
 var uid = 0;
 
@@ -78,7 +79,8 @@ module.exports = View.extend({
   },
 
   destroyColumn: function (id) {
-    var id = '_' + id;
+    removeElement(document.getElementById(id));
+
     var columns = this.get('columns');
     columns.forEach(function (column, i) {
       if (id === column.id) delete columns[i];
@@ -110,7 +112,7 @@ module.exports = View.extend({
   destroyRow: function (index) {
     var rows = this.get('rows');
     rows.forEach(function (row, i) {
-      if (index === i) rows.splice(index, 1);
+      if (parseInt(index) === i) rows.splice(index, 1);
     });
   },
 

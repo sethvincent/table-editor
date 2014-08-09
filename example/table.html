@@ -1,20 +1,25 @@
 <table id="table-editor">
-  <thead>
+  <thead id="table-header">
     <tr>
-      {{#each columns}}
-        <th><input value="{{name}}"/></th>
-      {{/each}}
+      <span class="spacer"></span>
+      {{#columns:key}}
+        <th id={{id}}>
+          <span class="column-name"><input value="{{name}}"></span>
+          <button id="{{id}}" class="destroy-column">x</button>
+        </th>
+      {{/columns}}
     </tr>
   </thead>
-  <tbody>
-    {{#each rows:i}}
-    <tr class="{{ i }}">
-      {{#each columns}}
-      <td>
-        <textarea value="{{rows[i][id]}}"></textarea>
+  <tbody id="table-body">
+    {{#rows:i}}
+    <tr class="row-{{ i }}">
+      <button class="destroy-row" id={{i}}>x</button>
+      {{#this:value}}
+      <td class="column-{{value}}" id="row-{{ i }}-column-{{value}}">
+        <textarea value="{{this}}"></textarea>
       </td>
-      {{/each}}
+      {{/.}}
     </tr>
-    {{/each}}
+    {{/rows}}
   </tbody>
 </table>
