@@ -1,9 +1,7 @@
 var test = require('tape');
 var TableEditor = require('./index');
 
-var editor = new TableEditor({
-  el: 'container'
-});
+var editor = new TableEditor();
 
 editor.import([
   { example: 'weeeee', wat: 'wooooo' },
@@ -30,9 +28,7 @@ test('set a value', function (t) {
 
 test('watch for changes', function (t) {
   t.plan(1);
-  var ed = new TableEditor({
-    el: 'container'
-  });
+  var ed = new TableEditor();
 
   ed.import([
     { example: 'weeeee', wat: 'wooooo' },
@@ -45,6 +41,44 @@ test('watch for changes', function (t) {
   });
 
   ed.set('rows.0.wat', 'testing');
+});
+
+test('delete a row', function (t) {
+  t.plan(1);
+  var ed = new TableEditor();
+
+  ed.import([
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ]);
+
+  ed.destroyRow(1);
+
+  t.deepEqual(ed.toJSON(), JSON.stringify([
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ]));
+});
+
+test('delete a column', function (t) {
+  t.plan(1);
+  var ed = new TableEditor();
+
+  ed.import([
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ]);
+
+  var id = ed.get('columns.0.id');
+  ed.destroyColumn(id);
+
+  t.deepEqual(ed.toJSON(), JSON.stringify([
+    { wat: 'wooooo' },
+    { wat: 'wooooo' },
+    { wat: 'wooooo' }
+  ]));
 });
 
 test('toJSON should export stringified JSON in format it was imported', function (t) {

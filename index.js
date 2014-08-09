@@ -79,7 +79,7 @@ module.exports = View.extend({
   },
 
   destroyColumn: function (id) {
-    removeElement(document.getElementById(id));
+    if (process.env.browser) removeElement(document.getElementById(id));
 
     var columns = this.get('columns');
     columns.forEach(function (column, i) {
