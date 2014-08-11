@@ -17,7 +17,7 @@ It's designed for use with browserify, but you can alternatively grab the `table
 ```js
 var fs = require('fs');
 var on = require('component-delegate').bind;
-var TableEditor = require('../index');
+var TableEditor = require('table-editor');
 var template = fs.readFileSync(__dirname + '/table.html', 'utf8');
 
 var editor = new TableEditor({

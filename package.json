@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "ractive": "^0.5.5",
-    "remove-element": "0.0.0"
+    "remove-element": "0.0.0",
   },
   "devDependencies": {
     "brfs": "^1.2.0",
