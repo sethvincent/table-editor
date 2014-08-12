@@ -1,144 +1,39 @@
-var removeElement = require('remove-element');
-var View = require('ractive');
-var uid = 0;
+var fs = require('fs');
+var on = require('component-delegate').bind;
+var TableEditor = require('table-editor');
+var template = fs.readFileSync(__dirname + '/table.html', 'utf8');
 
-module.exports = View.extend({
+var editor = new TableEditor({
+  el: 'editor',
+  template: template,
+});
 
-  init: function (opts) {
-    this.template = View.parse(opts.template);
-  },
+editor.import([
+  { example: 'weeeee', wat: 'wooooo' },
+  { example: 'weeeee', wat: 'wooooo' },
+  { example: 'weeeee', wat: 'wooooo' }
+]);
 
-  import: function (items) {
-    var columns = [];
-    var columnIdByName = {};
+var dump = document.getElementById('json-dump');
+dump.value = editor.toJSON();
 
-    items.forEach( function (item) {
-      Object.keys(item).forEach( function ( name ) {
-        var columnId;
+editor.on('change', function (change) {
+  dump.value = editor.toJSON();
+});
 
-        if (!columnIdByName[name]) {
-          columnId = '_' + uid++;
-          columnIdByName[name] = columnId;
+on(document.body, '#add-row', 'click', function(e) {
+  editor.addRow();
+});
 
-          columns.push({
-            id: columnId,
-            name: name,
-            type: 'string',
-            defaultValue: function () { return ''; }
-          });
-        }
-      });
-    });
+on(document.body, '.destroy-row', 'click', function(e) {
+  editor.destroyRow(e.target.id);
+});
 
-    rows = items.map(function (item) {
-      var row = {};
+on(document.body, '#add-column', 'click', function(e) {
+  var name = window.prompt('New column name');
+  editor.addColumn({ name: name, type: 'string' });
+});
 
-      Object.keys(item).forEach(function (name) {
-        row[columnIdByName[name]] = item[name];
-      });
-
-      return row;
-    });
-
-    this.set({
-      columns: columns,
-      columnIdByName: columnIdByName,
-      rows: rows
-    });
-  },
-
-  addColumn: function (column) {
-    var changes = {};
-    var id = '_' + uid++;
-
-    this.push('columns', {
-      id: id,
-      name: column.name,
-      type: column.type || 'string'
-    });
-
-    var rows = this.get('rows');
-
-    if (rows.length > 0) {
-      rows.forEach(function (row, i) {
-        changes['rows[' + i + '].' + id] = '';
-      });
-      this.set(changes);
-    }
-
-    else {
-      this.addRow();
-    }
-  },
-
-  addColumns: function (columns) {
-    var self = this;
-    columns.forEach(function (column) {
-      self.addColumn(column);
-    });
-  },
-
-  destroyColumn: function (id) {
-    if (process.env.browser) removeElement(document.getElementById(id));
-
-    var columns = this.get('columns');
-    columns.forEach(function (column, i) {
-      if (id === column.id) delete columns[i];
-    });
-
-    var rows = this.get('rows');
-    rows.forEach(function (row, i) {
-      delete rows[i][id];
-    });
-
-    this.update();
-  },
-
-  addRow: function () {
-    var row = {};
-    this.get('columns').forEach(function (column) {
-      row[column.id] = '';
-    });
-    this.push('rows', row);
-  },
-
-  addRows: function (rows) {
-    var self = this;
-    rows.forEach(function (row) {
-      self.addRow(row);
-    });
-  },
-
-  destroyRow: function (index) {
-    var rows = this.get('rows');
-    rows.forEach(function (row, i) {
-      if (parseInt(index) === i) rows.splice(index, 1);
-    });
-  },
-
-  clear: function () {
-    this.set('columns', []);
-    this.set('rows', []);
-    this.set('columnIdByName', {});
-  },
-
-  toJSON: function (cb) {
-    var ret = [];
-    var rows = this.get('rows');
-    var columns = this.get('columns');
-    var columnIdByName = this.get('columnIdByName');
-
-    rows.forEach(function (row, i) {
-      var newRow = {};
-
-      columns.forEach(function(column) {
-        newRow[column.name] = row[column.id];
-      });
-
-      ret.push(newRow);
-    });
-
-    return JSON.stringify(ret);
-  }
-
+on(document.body, '.destroy-column', 'click', function(e) {
+  editor.destroyColumn(e.target.id);
 });

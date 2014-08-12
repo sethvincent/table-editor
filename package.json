@@ -1,5 +1,5 @@
 {
-  "name": "table-editor",
+  "name": "table-editor-example",
   "description": "edit tabular data.",
   "version": "0.4.0",
   "repository": {
@@ -7,14 +7,11 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "tape test.js",
-    "example": "beefy example/index.js --live --index example/index.html -- -t brfs",
-    "bundle": "browserify index.js -s TableEditor -o table-editor.js",
-    "start": "npm run watch"
+    "start": "beefy index.js:bundle.js --live -- -t brfs",
+    "bundle": "browserify index.js -o bundle.js"
   },
   "dependencies": {
-    "ractive": "^0.5.5",
-    "remove-element": "0.0.0"
+    "table-editor": "^0.4.0"
   },
   "devDependencies": {
     "brfs": "^1.2.0",
