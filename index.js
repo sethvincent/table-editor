@@ -57,6 +57,8 @@ module.exports = View.extend({
       type: column.type || 'string'
     });
 
+    this.set('columnIdByName.' + column.name, id);
+
     var rows = this.get('rows');
 
     if (rows.length > 0) {
@@ -80,12 +82,18 @@ module.exports = View.extend({
 
   destroyColumn: function (id) {
     if (process.browser) removeElement(document.getElementById(id));
+
+    var columnIdByName = this.get('columnIdByName');
     var columns = this.get('columns');
+    var rows = this.get('rows');
+
     columns.forEach(function (column, i) {
-      if (id === column.id) delete columns[i];
+      if (id === column.id) {
+        columns.splice(i, 1);
+        delete columnIdByName[column.name];
+      }
     });
 
-    var rows = this.get('rows');
     rows.forEach(function (row, i) {
       delete rows[i][id];
     });
@@ -121,7 +129,7 @@ module.exports = View.extend({
     this.set('columnIdByName', {});
   },
 
-  toJSON: function (cb) {
+  getRows: function () {
     var ret = [];
     var rows = this.get('rows');
     var columns = this.get('columns');
@@ -137,7 +145,11 @@ module.exports = View.extend({
       ret.push(newRow);
     });
 
-    return JSON.stringify(ret);
+    return ret;
+  },
+
+  toJSON: function () {
+    return JSON.stringify(this.getRows());
   }
 
 });
