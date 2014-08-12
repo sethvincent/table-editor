@@ -1,11 +1,12 @@
 {
   "name": "table-editor",
   "description": "edit tabular data.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "repository": {
     "url": "git://github.com/sethvincent/table-editor.git"
   },
   "main": "index.js",
+  "browser": "index.js",
   "scripts": {
     "test": "tape test.js",
     "example": "beefy example/index.js --live --index example/index.html -- -t brfs",
