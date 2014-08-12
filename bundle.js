@@ -1,9 +1,8 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-(function (__dirname){
-var fs = require('fs');
+
 var on = require('component-delegate').bind;
 var TableEditor = require('table-editor');
-var template = fs.readFileSync(__dirname + '/table.html', 'utf8');
+var template = "<table id=\"table-editor\">\n  <thead id=\"table-header\">\n    <tr>\n      <span class=\"spacer\"></span>\n      {{#columns:key}}\n        <th id={{id}}>\n          <span class=\"column-name\"><input value=\"{{name}}\"></span>\n          <button id=\"{{id}}\" class=\"destroy-column\">x</button>\n        </th>\n      {{/columns}}\n    </tr>\n  </thead>\n  <tbody id=\"table-body\">\n    {{#rows:i}}\n    <tr class=\"row-{{ i }}\">\n      <button class=\"destroy-row\" id={{i}}>x</button>\n      {{#this:value}}\n      <td class=\"column-{{value}}\" id=\"row-{{ i }}-column-{{value}}\">\n        <textarea value=\"{{this}}\"></textarea>\n      </td>\n      {{/.}}\n    </tr>\n    {{/rows}}\n  </tbody>\n</table>\n";
 
 var editor = new TableEditor({
   el: 'editor',
@@ -40,10 +39,7 @@ on(document.body, '.destroy-column', 'click', function(e) {
   editor.destroyColumn(e.target.id);
 });
 
-}).call(this,"/")
-},{"component-delegate":4,"fs":2,"table-editor":9}],2:[function(require,module,exports){
-
-},{}],3:[function(require,module,exports){
+},{"component-delegate":3,"table-editor":8}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -108,7 +104,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -152,7 +148,7 @@ exports.unbind = function(el, type, fn, capture){
   event.unbind(el, type, fn, capture);
 };
 
-},{"closest":5,"event":8}],5:[function(require,module,exports){
+},{"closest":4,"event":7}],4:[function(require,module,exports){
 var matches = require('matches-selector')
 
 module.exports = function (element, selector, checkYoSelf, root) {
@@ -173,7 +169,7 @@ module.exports = function (element, selector, checkYoSelf, root) {
   }
 }
 
-},{"matches-selector":6}],6:[function(require,module,exports){
+},{"matches-selector":5}],5:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -221,7 +217,7 @@ function match(el, selector) {
   return false;
 }
 
-},{"query":7}],7:[function(require,module,exports){
+},{"query":6}],6:[function(require,module,exports){
 function one(selector, el) {
   return el.querySelector(selector);
 }
@@ -244,7 +240,7 @@ exports.engine = function(obj){
   return exports;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var bind = window.addEventListener ? 'addEventListener' : 'attachEvent',
     unbind = window.removeEventListener ? 'removeEventListener' : 'detachEvent',
     prefix = bind !== 'addEventListener' ? 'on' : '';
@@ -280,7 +276,7 @@ exports.unbind = function(el, type, fn, capture){
   el[unbind](prefix + type, fn, capture || false);
   return fn;
 };
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 (function (process){
 var removeElement = require('remove-element');
 var View = require('ractive');
@@ -428,7 +424,7 @@ module.exports = View.extend({
 });
 
 }).call(this,require("FWaASH"))
-},{"FWaASH":3,"ractive":10,"remove-element":11}],10:[function(require,module,exports){
+},{"FWaASH":2,"ractive":9,"remove-element":10}],9:[function(require,module,exports){
 /*
 	ractive.js v0.5.5
 	2014-07-13 - commit 8b1d34ef 
@@ -13589,7 +13585,7 @@ module.exports = View.extend({
 
 }( typeof window !== 'undefined' ? window : this ) );
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports = remove
 
 function remove(element) {
