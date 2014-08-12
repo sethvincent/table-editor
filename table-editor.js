@@ -2,12 +2,12 @@
 (function (process){
 var removeElement = _dereq_('remove-element');
 var View = _dereq_('ractive');
-var uid = 0;
 
 module.exports = View.extend({
 
   init: function (opts) {
     this.template = View.parse(opts.template);
+    this.set('uid', 0);
   },
 
   import: function (items) {
@@ -19,9 +19,11 @@ module.exports = View.extend({
         var columnId;
 
         if (!columnIdByName[name]) {
-          columnId = '_' + uid++;
-          columnIdByName[name] = columnId;
+          columnId = '_' + this.get('uid');
+          this.add('uid');
 
+          columnIdByName[name] = columnId;
+          console.log(columnId)
           columns.push({
             id: columnId,
             name: name,
@@ -51,7 +53,9 @@ module.exports = View.extend({
 
   addColumn: function (column) {
     var changes = {};
-    var id = '_' + uid++;
+
+    var id = '_' + this.get('uid');
+    this.add('uid');
 
     this.push('columns', {
       id: id,
