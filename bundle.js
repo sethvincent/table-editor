@@ -39,7 +39,7 @@ on(document.body, '.destroy-column', 'click', function(e) {
   editor.destroyColumn(e.target.id);
 });
 
-},{"component-delegate":3,"table-editor":8}],2:[function(require,module,exports){
+},{"component-delegate":3,"table-editor":10}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -277,154 +277,6 @@ exports.unbind = function(el, type, fn, capture){
   return fn;
 };
 },{}],8:[function(require,module,exports){
-(function (process){
-var removeElement = require('remove-element');
-var View = require('ractive');
-var uid = 0;
-
-module.exports = View.extend({
-
-  init: function (opts) {
-    this.template = View.parse(opts.template);
-  },
-
-  import: function (items) {
-    var columns = [];
-    var columnIdByName = {};
-
-    items.forEach( function (item) {
-      Object.keys(item).forEach( function ( name ) {
-        var columnId;
-
-        if (!columnIdByName[name]) {
-          columnId = '_' + uid++;
-          columnIdByName[name] = columnId;
-
-          columns.push({
-            id: columnId,
-            name: name,
-            type: 'string',
-            defaultValue: function () { return ''; }
-          });
-        }
-      });
-    });
-
-    rows = items.map(function (item) {
-      var row = {};
-
-      Object.keys(item).forEach(function (name) {
-        row[columnIdByName[name]] = item[name];
-      });
-
-      return row;
-    });
-
-    this.set({
-      columns: columns,
-      columnIdByName: columnIdByName,
-      rows: rows
-    });
-  },
-
-  addColumn: function (column) {
-    var changes = {};
-    var id = '_' + uid++;
-
-    this.push('columns', {
-      id: id,
-      name: column.name,
-      type: column.type || 'string'
-    });
-
-    var rows = this.get('rows');
-
-    if (rows.length > 0) {
-      rows.forEach(function (row, i) {
-        changes['rows[' + i + '].' + id] = '';
-      });
-      this.set(changes);
-    }
-
-    else {
-      this.addRow();
-    }
-  },
-
-  addColumns: function (columns) {
-    var self = this;
-    columns.forEach(function (column) {
-      self.addColumn(column);
-    });
-  },
-
-  destroyColumn: function (id) {
-    if (process.env.browser) removeElement(document.getElementById(id));
-
-    var columns = this.get('columns');
-    columns.forEach(function (column, i) {
-      if (id === column.id) delete columns[i];
-    });
-
-    var rows = this.get('rows');
-    rows.forEach(function (row, i) {
-      delete rows[i][id];
-    });
-
-    this.update();
-  },
-
-  addRow: function () {
-    var row = {};
-    this.get('columns').forEach(function (column) {
-      row[column.id] = '';
-    });
-    this.push('rows', row);
-  },
-
-  addRows: function (rows) {
-    var self = this;
-    rows.forEach(function (row) {
-      self.addRow(row);
-    });
-  },
-
-  destroyRow: function (index) {
-    var rows = this.get('rows');
-    rows.forEach(function (row, i) {
-      if (parseInt(index) === i) rows.splice(index, 1);
-    });
-  },
-
-  clear: function () {
-    this.set('columns', []);
-    this.set('rows', []);
-    this.set('columnIdByName', {});
-  },
-
-  toJSON: function (cb) {
-    var ret = [];
-    var rows = this.get('rows');
-    var columns = this.get('columns');
-    var columnIdByName = this.get('columnIdByName');
-
-    rows.forEach(function (row, i) {
-      var newRow = {};
-
-      columns.forEach(function(column) {
-        newRow[column.name] = row[column.id];
-      });
-
-      ret.push(newRow);
-    });
-
-    return JSON.stringify(ret);
-  }
-
-});
-
-}).call(this,require("FWaASH"))
-},{"FWaASH":2,"ractive":9,"remove-element":10}],9:[function(require,module,exports){
 /*
 	ractive.js v0.5.5
 	2014-07-13 - commit 8b1d34ef 
@@ -13585,7 +13437,7 @@ module.exports = View.extend({
 
 }( typeof window !== 'undefined' ? window : this ) );
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = remove
 
 function remove(element) {
@@ -13597,4 +13449,151 @@ function remove(element) {
   return element
 }
 
-},{}]},{},[1])
+},{}],10:[function(require,module,exports){
+(function (process){
+var removeElement = require('remove-element');
+var View = require('ractive');
+var uid = 0;
+
+module.exports = View.extend({
+
+  init: function (opts) {
+    this.template = View.parse(opts.template);
+  },
+
+  import: function (items) {
+    var columns = [];
+    var columnIdByName = {};
+
+    items.forEach( function (item) {
+      Object.keys(item).forEach( function ( name ) {
+        var columnId;
+
+        if (!columnIdByName[name]) {
+          columnId = '_' + uid++;
+          columnIdByName[name] = columnId;
+
+          columns.push({
+            id: columnId,
+            name: name,
+            type: 'string',
+            defaultValue: function () { return ''; }
+          });
+        }
+      });
+    });
+
+    rows = items.map(function (item) {
+      var row = {};
+
+      Object.keys(item).forEach(function (name) {
+        row[columnIdByName[name]] = item[name];
+      });
+
+      return row;
+    });
+
+    this.set({
+      columns: columns,
+      columnIdByName: columnIdByName,
+      rows: rows
+    });
+  },
+
+  addColumn: function (column) {
+    var changes = {};
+    var id = '_' + uid++;
+
+    this.push('columns', {
+      id: id,
+      name: column.name,
+      type: column.type || 'string'
+    });
+
+    var rows = this.get('rows');
+
+    if (rows.length > 0) {
+      rows.forEach(function (row, i) {
+        changes['rows[' + i + '].' + id] = '';
+      });
+      this.set(changes);
+    }
+
+    else {
+      this.addRow();
+    }
+  },
+
+  addColumns: function (columns) {
+    var self = this;
+    columns.forEach(function (column) {
+      self.addColumn(column);
+    });
+  },
+
+  destroyColumn: function (id) {
+    if (process.browser) removeElement(document.getElementById(id));
+    var columns = this.get('columns');
+    columns.forEach(function (column, i) {
+      if (id === column.id) delete columns[i];
+    });
+
+    var rows = this.get('rows');
+    rows.forEach(function (row, i) {
+      delete rows[i][id];
+    });
+
+    this.update();
+  },
+
+  addRow: function () {
+    var row = {};
+    this.get('columns').forEach(function (column) {
+      row[column.id] = '';
+    });
+    this.push('rows', row);
+  },
+
+  addRows: function (rows) {
+    var self = this;
+    rows.forEach(function (row) {
+      self.addRow(row);
+    });
+  },
+
+  destroyRow: function (index) {
+    var rows = this.get('rows');
+    rows.forEach(function (row, i) {
+      if (parseInt(index) === i) rows.splice(index, 1);
+    });
+  },
+
+  clear: function () {
+    this.set('columns', []);
+    this.set('rows', []);
+    this.set('columnIdByName', {});
+  },
+
+  toJSON: function (cb) {
+    var ret = [];
+    var rows = this.get('rows');
+    var columns = this.get('columns');
+    var columnIdByName = this.get('columnIdByName');
+
+    rows.forEach(function (row, i) {
+      var newRow = {};
+
+      columns.forEach(function(column) {
+        newRow[column.name] = row[column.id];
+      });
+
+      ret.push(newRow);
+    });
+
+    return JSON.stringify(ret);
+  }
+
+});
+
+}).call(this,require("FWaASH"))
+},{"FWaASH":2,"ractive":8,"remove-element":9}]},{},[1])

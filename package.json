@@ -1,7 +1,7 @@
 {
   "name": "table-editor-example",
   "description": "edit tabular data.",
-  "version": "0.4.0",
+  "version": "0.0.0",
   "repository": {
     "url": "git://github.com/sethvincent/table-editor.git"
   },
@@ -11,7 +11,7 @@
     "bundle": "browserify index.js -o bundle.js -t brfs"
   },
   "dependencies": {
-    "table-editor": "^0.4.0"
+    "table-editor": "^0.4.1"
   },
   "devDependencies": {
     "brfs": "^1.2.0",
