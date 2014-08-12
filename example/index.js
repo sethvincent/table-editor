@@ -36,34 +36,3 @@ on(document.body, '#add-column', 'click', function(e) {
 on(document.body, '.destroy-column', 'click', function(e) {
   editor.destroyColumn(e.target.id);
 });
-
-
-/* listener for the table body
-on(document.body, '#table-body', 'click', function (e) {
-  var btn;
-
-  if (e.target.tagName === 'TEXTAREA') {
-    var cellEl = document.getElementById(closest(e.target, 'td').id);
-
-    var id = closest(e.target, 'td').id;
-    io.emit('cell-focus', '#' + id);
-
-    e.target.onblur = function (e) {
-      io.emit('cell-blur', '#' + id);
-    }
-
-    return;
-  }
-
-  else if (elClass(e.target).has('delete-row')) btn = e.target;
-  else if (elClass(e.target).has('delete-btn-icon')) btn = closest(e.target, '.delete-row');
-  else return;
-
-  if (window.confirm('Sure you want to delete this row and its contents?')) {
-    var row = closest(btn, 'tr');
-    console.log('happenenenenen', row.className.split('-')[1])
-    editor.destroyRow(row.className.split('-')[1]);
-    editor.update();
-  }
-});
-*/
