@@ -9,6 +9,8 @@ module.exports = View.extend({
   },
 
   import: function (items) {
+    var self = this;
+
     var columns = [];
     var columnIdByName = {};
 
@@ -17,11 +19,11 @@ module.exports = View.extend({
         var columnId;
 
         if (!columnIdByName[name]) {
-          columnId = '_' + this.get('uid');
-          this.add('uid');
+          columnId = '_' + self.get('uid');
+          self.add('uid');
 
           columnIdByName[name] = columnId;
-          console.log(columnId)
+
           columns.push({
             id: columnId,
             name: name,
