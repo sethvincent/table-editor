@@ -28,7 +28,7 @@ module.exports = View.extend({
             id: columnId,
             name: name,
             type: 'string',
-            defaultValue: function () { return ''; }
+            defaultValue: function () { return ' '; }
           });
         }
       });
@@ -37,7 +37,8 @@ module.exports = View.extend({
     rows = items.map(function (item) {
       var row = {};
 
-      Object.keys(item).forEach(function (name) {
+      Object.keys(columnIdByName).forEach(function (name) {
+        if (!item[name]) item[name] = ' ';
         row[columnIdByName[name]] = item[name];
       });
 
