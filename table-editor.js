@@ -5,7 +5,7 @@ var View = _dereq_('ractive');
 
 module.exports = View.extend({
 
-  init: function () {
+  onrender: function () {
     this.set('uid', 0);
   },
 
@@ -23,12 +23,12 @@ module.exports = View.extend({
           self.add('uid');
 
           columnIdByName[name] = columnId;
-          console.log(columnId)
+
           columns.push({
             id: columnId,
             name: name,
             type: 'string',
-            defaultValue: function () { return ''; }
+            defaultValue: function () { return ' '; }
           });
         }
       });
@@ -37,7 +37,8 @@ module.exports = View.extend({
     rows = items.map(function (item) {
       var row = {};
 
-      Object.keys(item).forEach(function (name) {
+      Object.keys(columnIdByName).forEach(function (name) {
+        if (!item[name]) item[name] = ' ';
         row[columnIdByName[name]] = item[name];
       });
 
