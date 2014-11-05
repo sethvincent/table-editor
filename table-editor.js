@@ -177,6 +177,7 @@ module.exports = Ractive.extend({
   */
   forceUpdate: function () {
     this.import(this.getRows());
+    this.update();
   }
 
 });
