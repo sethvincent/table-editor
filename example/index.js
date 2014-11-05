@@ -9,18 +9,21 @@ var editor = new TableEditor({
 });
 
 editor.import([
-  { example: 'weeeee', wat: 'wooooo' },
-  { example: 'weeeee', wat: 'wooooo' },
-  { example: 'weeeee', wat: 'wooooo' }
+  { example: '1', wat: 'a' },
+  { example: '2', wat: 'b' },
+  { example: '3', wat: 'c' }
 ]);
-
-console.log(process.env)
 
 var dump = document.getElementById('json-dump');
 dump.value = editor.toJSON();
 
 editor.on('change', function (change) {
+  console.log('weeeeee')
   dump.value = editor.toJSON();
+});
+
+on(document.body, '#update', 'click', function(e) {
+  editor.update();
 });
 
 on(document.body, '#add-row', 'click', function(e) {

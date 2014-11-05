@@ -1,7 +1,7 @@
 {
   "name": "table-editor",
   "description": "edit tabular data.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "repository": {
     "url": "git://github.com/sethvincent/table-editor.git"
   },
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "ractive": "0.6.1",
+    "ractive-decorators-sortable": "git://github.com/sethvincent/Ractive-decorators-sortable",
     "remove-element": "0.0.0"
   },
   "devDependencies": {

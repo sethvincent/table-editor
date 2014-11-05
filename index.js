@@ -1,10 +1,21 @@
 var removeElement = require('remove-element');
-var View = require('ractive');
+var Ractive = require('ractive');
+require('Ractive-decorators-sortable');
 
-module.exports = View.extend({
+module.exports = Ractive.extend({
 
   onrender: function () {
+    var self = this;
     this.set('uid', 0);
+
+    this.on('dragenter', function () {
+      /* 
+      * Wow this is a nasty hack that probably won't scale.
+      * But for some reason <td> elements of the row being indirectly 
+      * moved disappear on dragenter.
+      */
+      self.import(self.getRows());
+    });
   },
 
   import: function (items) {
