@@ -14,7 +14,7 @@ module.exports = Ractive.extend({
       * But for some reason <td> elements of the row being indirectly 
       * moved disappear on dragenter.
       */
-      self.import(self.getRows());
+      self.forceUpdate();
     });
   },
 
@@ -166,6 +166,15 @@ module.exports = Ractive.extend({
 
   toJSON: function () {
     return JSON.stringify(this.getRows());
+  },
+
+  /* 
+  * Wow this is a nasty hack that probably won't scale.
+  * But for some reason <td> elements of the row being indirectly 
+  * moved disappear on dragenter.
+  */
+  forceUpdate: function () {
+    this.import(this.getRows());
   }
 
 });

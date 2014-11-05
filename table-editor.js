@@ -1,12 +1,23 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.TableEditor=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 (function (process){
 var removeElement = _dereq_('remove-element');
-var View = _dereq_('ractive');
+var Ractive = _dereq_('ractive');
+_dereq_('Ractive-decorators-sortable');
 
-module.exports = View.extend({
+module.exports = Ractive.extend({
 
   onrender: function () {
+    var self = this;
     this.set('uid', 0);
+
+    this.on('dragenter', function () {
+      /* 
+      * Wow this is a nasty hack that probably won't scale.
+      * But for some reason <td> elements of the row being indirectly 
+      * moved disappear on dragenter.
+      */
+      self.forceUpdate();
+    });
   },
 
   import: function (items) {
@@ -157,77 +168,228 @@ module.exports = View.extend({
 
   toJSON: function () {
     return JSON.stringify(this.getRows());
+  },
+
+  /* 
+  * Wow this is a nasty hack that probably won't scale.
+  * But for some reason <td> elements of the row being indirectly 
+  * moved disappear on dragenter.
+  */
+  forceUpdate: function () {
+    this.import(this.getRows());
   }
 
 });
 
 }).call(this,_dereq_("FWaASH"))
-},{"FWaASH":2,"ractive":3,"remove-element":4}],2:[function(_dereq_,module,exports){
-// shim for using process in browser
+},{"FWaASH":4,"Ractive-decorators-sortable":2,"ractive":5,"remove-element":6}],2:[function(_dereq_,module,exports){
+/*
 
-var process = module.exports = {};
+	Ractive-decorators-sortable
+	===========================
 
-process.nextTick = (function () {
-    var canSetImmediate = typeof window !== 'undefined'
-    && window.setImmediate;
-    var canPost = typeof window !== 'undefined'
-    && window.postMessage && window.addEventListener
-    ;
+	Version 0.1.0.
 
-    if (canSetImmediate) {
-        return function (f) { return window.setImmediate(f) };
-    }
+	This plugin adds a 'sortable' decorator to Ractive, which enables
+	elements that correspond to array members to be re-ordered using
+	the HTML5 drag and drop API. Doing so will update the order
+	of the array.
 
-    if (canPost) {
-        var queue = [];
-        window.addEventListener('message', function (ev) {
-            var source = ev.source;
-            if ((source === window || source === null) && ev.data === 'process-tick') {
-                ev.stopPropagation();
-                if (queue.length > 0) {
-                    var fn = queue.shift();
-                    fn();
-                }
-            }
-        }, true);
+	==========================
 
-        return function nextTick(fn) {
-            queue.push(fn);
-            window.postMessage('process-tick', '*');
-        };
-    }
+	Troubleshooting: If you're using a module system in your app (AMD or
+	something more nodey) then you may need to change the paths below,
+	where it says `require( 'Ractive' )` or `define([ 'Ractive' ]...)`.
 
-    return function nextTick(fn) {
-        setTimeout(fn, 0);
-    };
-})();
+	==========================
 
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
+	Usage: Include this file on your page below Ractive, e.g:
 
-function noop() {}
+	    <script src='lib/Ractive.js'></script>
+	    <script src='lib/Ractive-decorators-sortable.js'></script>
 
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
+	Or, if you're using a module loader, require this module:
 
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-}
+	    // requiring the plugin will 'activate' it - no need to use
+	    // the return value
+	    require( 'Ractive-decorators-sortable' );
 
-// TODO(shtylman)
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
+	Then use the decorator like so:
 
-},{}],3:[function(_dereq_,module,exports){
+	    <!-- template -->
+	    <ul>
+	      {{#list}}
+	        <li decorator='sortable'>{{.}}</li>
+	      {{/list}}
+	    </ul>
+
+	    var ractive = new Ractive({
+	      el: myContainer,
+	      template: myTemplate,
+	      data: { list: [ 'Firefox', 'Chrome', 'Internet Explorer', 'Opera', 'Safari', 'Maxthon' ] }
+	    });
+
+	When the user drags the source element over a target element, the
+	target element will have a class name added to it. This allows you
+	to render the target differently (e.g. hide the text, add a dashed
+	border, whatever). By default this class name is 'droptarget'.
+
+	You can configure the class name like so:
+
+	    Ractive.decorators.sortable.targetClass = 'aDifferentClassName';
+
+	PS for an entertaining rant about the drag and drop API, visit
+	http://www.quirksmode.org/blog/archives/2009/09/the_html5_drag.html
+
+*/
+
+(function ( global, factory ) {
+
+	'use strict';
+
+	// Common JS (i.e. browserify) environment
+	if ( typeof module !== 'undefined' && module.exports && typeof _dereq_ === 'function' ) {
+		factory( _dereq_( 'Ractive' ) );
+	}
+
+	// AMD?
+	else if ( typeof define === 'function' && define.amd ) {
+		define([ 'Ractive' ], factory );
+	}
+
+	// browser global
+	else if ( global.Ractive ) {
+		factory( global.Ractive );
+	}
+
+	else {
+		throw new Error( 'Could not find Ractive! It must be loaded before the Ractive-decorators-sortable plugin' );
+	}
+
+}( typeof window !== 'undefined' ? window : this, function ( Ractive ) {
+
+	'use strict';
+
+	var sortable,
+		ractive,
+		sourceKeypath,
+		sourceArray,
+		sourceIndex,
+		dragstartHandler,
+		dragenterHandler,
+		removeTargetClass,
+		preventDefault,
+		errorMessage;
+
+	sortable = function ( node ) {
+		node.draggable = true;
+
+		node.addEventListener( 'dragstart', dragstartHandler, false );
+		node.addEventListener( 'dragenter', dragenterHandler, false );
+		node.addEventListener( 'dragleave', removeTargetClass, false );
+		node.addEventListener( 'drop', removeTargetClass, false );
+
+		// necessary to prevent animation where ghost element returns
+		// to its (old) home
+		node.addEventListener( 'dragover', preventDefault, false );
+
+		return {
+			teardown: function () {
+				node.removeEventListener( 'dragstart', dragstartHandler, false );
+				node.removeEventListener( 'dragenter', dragenterHandler, false );
+				node.removeEventListener( 'dragleave', removeTargetClass, false );
+				node.removeEventListener( 'drop', removeTargetClass, false );
+				node.removeEventListener( 'dragover', preventDefault, false );
+			}
+		};
+	};
+
+	sortable.targetClass = 'droptarget';
+
+	errorMessage = 'The sortable decorator only works with elements that correspond to array members';
+
+	dragstartHandler = function ( event ) {
+		var storage = this._ractive, lastDotIndex;
+		
+		sourceKeypath = storage.keypath;
+
+		// this decorator only works with array members!
+		lastDotIndex = sourceKeypath.lastIndexOf( '.' );
+
+		if ( lastDotIndex === -1 ) {
+			throw new Error( errorMessage );
+		}
+
+		sourceArray = sourceKeypath.substr( 0, lastDotIndex );
+		sourceIndex = +( sourceKeypath.substring( lastDotIndex + 1 ) );
+
+		if ( isNaN( sourceIndex ) ) {
+			throw new Error( errorMessage );
+		}
+
+		event.dataTransfer.setData( 'foo', true ); // enables dragging in FF. go figure
+		
+		this._ractive.root.fire('dragstart');
+				
+		// keep a reference to the Ractive instance that 'owns' this data and this element
+		ractive = storage.root;
+	};
+
+	dragenterHandler = function () {
+		var targetKeypath, lastDotIndex, targetArray, targetIndex, array, source;
+
+		// If we strayed into someone else's territory, abort
+		if ( this._ractive.root !== ractive ) {
+			return;
+		}
+
+		targetKeypath = this._ractive.keypath;
+
+		// this decorator only works with array members!
+		lastDotIndex = targetKeypath.lastIndexOf( '.' );
+
+		if ( lastDotIndex === -1 ) {
+			throw new Error( errorMessage );
+		}
+
+		targetArray = targetKeypath.substr( 0, lastDotIndex );
+		targetIndex = +( targetKeypath.substring( lastDotIndex + 1 ) );
+
+		// if we're dealing with a different array, abort
+		if ( targetArray !== sourceArray ) {
+			return;
+		}
+
+		// if it's the same index, add droptarget class then abort
+		if ( targetIndex === sourceIndex ) {
+			this.classList.add( sortable.targetClass );
+			return;
+		}
+
+		array = ractive.get( sourceArray );
+
+		// remove source from array
+		source = array.splice( sourceIndex, 1 )[0];
+
+		// the target index is now the source index...
+		sourceIndex = targetIndex;
+
+		// add source back to array in new location
+		array.splice( sourceIndex, 0, source );
+		
+		this._ractive.root.fire('dragenter');
+	};
+
+	removeTargetClass = function () {
+		this.classList.remove( sortable.targetClass );
+	};
+
+	preventDefault = function ( event ) { event.preventDefault(); };
+
+	Ractive.decorators.sortable = sortable;
+
+}));
+},{"Ractive":3}],3:[function(_dereq_,module,exports){
 /*
 	ractive.js v0.6.1
 	2014-10-25 - commit 3a576eb3 
@@ -14577,6 +14739,73 @@ process.chdir = function (dir) {
 }( typeof window !== 'undefined' ? window : this ) );
 
 },{}],4:[function(_dereq_,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+
+process.nextTick = (function () {
+    var canSetImmediate = typeof window !== 'undefined'
+    && window.setImmediate;
+    var canPost = typeof window !== 'undefined'
+    && window.postMessage && window.addEventListener
+    ;
+
+    if (canSetImmediate) {
+        return function (f) { return window.setImmediate(f) };
+    }
+
+    if (canPost) {
+        var queue = [];
+        window.addEventListener('message', function (ev) {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+
+        return function nextTick(fn) {
+            queue.push(fn);
+            window.postMessage('process-tick', '*');
+        };
+    }
+
+    return function nextTick(fn) {
+        setTimeout(fn, 0);
+    };
+})();
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+}
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+
+},{}],5:[function(_dereq_,module,exports){
+module.exports=_dereq_(3)
+},{}],6:[function(_dereq_,module,exports){
 module.exports = remove
 
 function remove(element) {
