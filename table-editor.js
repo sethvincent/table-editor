@@ -179,8 +179,8 @@ module.exports = Ractive.extend({
   * But for some reason <td> elements of the row being indirectly 
   * moved disappear on dragenter.
   */
-  forceUpdate: function () {
-    var rows = this.getRows();
+  forceUpdate: function (rows) {
+    if (!rows) var rows = this.getRows();
     this.clear();
     this.import(rows);
   }
