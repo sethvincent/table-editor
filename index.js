@@ -181,8 +181,6 @@ module.exports = Ractive.extend({
     var rows = this.getRows();
     this.clear();
     this.import(rows);
-    this.update();
-    this.fire('change');
   }
 
 });

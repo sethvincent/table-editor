@@ -18,7 +18,6 @@ var dump = document.getElementById('json-dump');
 dump.value = editor.toJSON();
 
 editor.on('change', function (change) {
-  console.log('weeeeee')
   dump.value = editor.toJSON();
 });
 
@@ -40,6 +39,5 @@ on(document.body, '#add-column', 'click', function(e) {
 });
 
 on(document.body, '.destroy-column', 'click', function(e) {
-  console.log(e.target.id)
   editor.destroyColumn(e.target.id);
 });

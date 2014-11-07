@@ -140,8 +140,13 @@ module.exports = Ractive.extend({
       if (parseInt(index) === i) rows.splice(index, 1);
     });
   },
+  
+  destroyRows: function () {
+    this.set('rows', []);
+  },
 
   clear: function () {
+    this.set('uid', 0);
     this.set('columns', []);
     this.set('rows', []);
     this.set('columnIdByName', {});
@@ -151,7 +156,6 @@ module.exports = Ractive.extend({
     var ret = [];
     var rows = this.get('rows');
     var columns = this.get('columns');
-    var columnIdByName = this.get('columnIdByName');
 
     rows.forEach(function (row, i) {
       var newRow = {};
@@ -176,8 +180,9 @@ module.exports = Ractive.extend({
   * moved disappear on dragenter.
   */
   forceUpdate: function () {
-    this.import(this.getRows());
-    this.update();
+    var rows = this.getRows();
+    this.clear();
+    this.import(rows);
   }
 
 });
@@ -383,6 +388,7 @@ module.exports = Ractive.extend({
 
 	removeTargetClass = function () {
 		this.classList.remove( sortable.targetClass );
+		this._ractive.root.fire('drop');
 	};
 
 	preventDefault = function ( event ) { event.preventDefault(); };
