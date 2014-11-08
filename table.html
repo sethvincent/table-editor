@@ -12,7 +12,7 @@
   </thead>
   <tbody id="table-body">
     {{#rows:i}}
-    <tr class="row-{{ i }}">
+    <tr decorator="sortable" class="row-{{ i }}">
       <button class="destroy-row" id={{i}}>x</button>
       {{#this:value}}
       <td class="column-{{value}}" id="row-{{ i }}-column-{{value}}">

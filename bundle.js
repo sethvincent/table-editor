@@ -2,7 +2,7 @@
 
 var on = require('component-delegate').bind;
 var TableEditor = require('table-editor');
-var template = "<table id=\"table-editor\">\n  <thead id=\"table-header\">\n    <tr>\n      <span class=\"spacer\"></span>\n      {{#columns:key}}\n        <th id={{id}}>\n          <span class=\"column-name\"><input value=\"{{name}}\"></span>\n          <button id=\"{{id}}\" class=\"destroy-column\">x</button>\n        </th>\n      {{/columns}}\n    </tr>\n  </thead>\n  <tbody id=\"table-body\">\n    {{#rows:i}}\n    <tr class=\"row-{{ i }}\">\n      <button class=\"destroy-row\" id={{i}}>x</button>\n      {{#this:value}}\n      <td class=\"column-{{value}}\" id=\"row-{{ i }}-column-{{value}}\">\n        <textarea value=\"{{this}}\"></textarea>\n      </td>\n      {{/.}}\n    </tr>\n    {{/rows}}\n  </tbody>\n</table>\n";
+var template = "<table id=\"table-editor\">\n  <thead id=\"table-header\">\n    <tr>\n      <span class=\"spacer\"></span>\n      {{#columns:key}}\n        <th id={{id}}>\n          <span class=\"column-name\"><input value=\"{{name}}\"></span>\n          <button id=\"{{id}}\" class=\"destroy-column\">x</button>\n        </th>\n      {{/columns}}\n    </tr>\n  </thead>\n  <tbody id=\"table-body\">\n    {{#rows:i}}\n    <tr decorator=\"sortable\" class=\"row-{{ i }}\">\n      <button class=\"destroy-row\" id={{i}}>x</button>\n      {{#this:value}}\n      <td class=\"column-{{value}}\" id=\"row-{{ i }}-column-{{value}}\">\n        <textarea value=\"{{this}}\"></textarea>\n      </td>\n      {{/.}}\n    </tr>\n    {{/rows}}\n  </tbody>\n</table>\n";
 
 var editor = new TableEditor({
   el: 'editor',
@@ -10,9 +10,11 @@ var editor = new TableEditor({
 });
 
 editor.import([
-  { example: 'weeeee', wat: 'wooooo' },
-  { example: 'weeeee', wat: 'wooooo' },
-  { example: 'weeeee', wat: 'wooooo' }
+  { example: '1', wat: 'a' },
+  { example: '2', wat: 'b' },
+  { example: '3', wat: 'c' },
+  { example: '4', wat: 'd' },
+  { example: '5', wat: 'e' }
 ]);
 
 var dump = document.getElementById('json-dump');
@@ -39,247 +41,10 @@ on(document.body, '.destroy-column', 'click', function(e) {
   editor.destroyColumn(e.target.id);
 });
 
-},{"component-delegate":3,"table-editor":10}],2:[function(require,module,exports){
-// shim for using process in browser
-
-var process = module.exports = {};
-
-process.nextTick = (function () {
-    var canSetImmediate = typeof window !== 'undefined'
-    && window.setImmediate;
-    var canPost = typeof window !== 'undefined'
-    && window.postMessage && window.addEventListener
-    ;
-
-    if (canSetImmediate) {
-        return function (f) { return window.setImmediate(f) };
-    }
-
-    if (canPost) {
-        var queue = [];
-        window.addEventListener('message', function (ev) {
-            var source = ev.source;
-            if ((source === window || source === null) && ev.data === 'process-tick') {
-                ev.stopPropagation();
-                if (queue.length > 0) {
-                    var fn = queue.shift();
-                    fn();
-                }
-            }
-        }, true);
-
-        return function nextTick(fn) {
-            queue.push(fn);
-            window.postMessage('process-tick', '*');
-        };
-    }
-
-    return function nextTick(fn) {
-        setTimeout(fn, 0);
-    };
-})();
-
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-}
-
-// TODO(shtylman)
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-
-},{}],3:[function(require,module,exports){
-/**
- * Module dependencies.
- */
-
-var closest = require('closest')
-  , event = require('event');
-
-/**
- * Delegate event `type` to `selector`
- * and invoke `fn(e)`. A callback function
- * is returned which may be passed to `.unbind()`.
- *
- * @param {Element} el
- * @param {String} selector
- * @param {String} type
- * @param {Function} fn
- * @param {Boolean} capture
- * @return {Function}
- * @api public
- */
-
-exports.bind = function(el, selector, type, fn, capture){
-  return event.bind(el, type, function(e){
-    var target = e.target || e.srcElement;
-    e.delegateTarget = closest(target, selector, true, el);
-    if (e.delegateTarget) fn.call(el, e);
-  }, capture);
-};
-
-/**
- * Unbind event `type`'s callback `fn`.
- *
- * @param {Element} el
- * @param {String} type
- * @param {Function} fn
- * @param {Boolean} capture
- * @api public
- */
-
-exports.unbind = function(el, type, fn, capture){
-  event.unbind(el, type, fn, capture);
-};
-
-},{"closest":4,"event":7}],4:[function(require,module,exports){
-var matches = require('matches-selector')
-
-module.exports = function (element, selector, checkYoSelf, root) {
-  element = checkYoSelf ? {parentNode: element} : element
-
-  root = root || document
-
-  // Make sure `element !== document` and `element != null`
-  // otherwise we get an illegal invocation
-  while ((element = element.parentNode) && element !== document) {
-    if (matches(element, selector))
-      return element
-    // After `matches` on the edge case that
-    // the selector matches the root
-    // (when the root is not the document)
-    if (element === root)
-      return
-  }
-}
-
-},{"matches-selector":5}],5:[function(require,module,exports){
-/**
- * Module dependencies.
- */
-
-var query = require('query');
-
-/**
- * Element prototype.
- */
-
-var proto = Element.prototype;
-
-/**
- * Vendor function.
- */
-
-var vendor = proto.matches
-  || proto.webkitMatchesSelector
-  || proto.mozMatchesSelector
-  || proto.msMatchesSelector
-  || proto.oMatchesSelector;
-
-/**
- * Expose `match()`.
- */
-
-module.exports = match;
-
-/**
- * Match `el` to `selector`.
- *
- * @param {Element} el
- * @param {String} selector
- * @return {Boolean}
- * @api public
- */
-
-function match(el, selector) {
-  if (!el || el.nodeType !== 1) return false;
-  if (vendor) return vendor.call(el, selector);
-  var nodes = query.all(selector, el.parentNode);
-  for (var i = 0; i < nodes.length; ++i) {
-    if (nodes[i] == el) return true;
-  }
-  return false;
-}
-
-},{"query":6}],6:[function(require,module,exports){
-function one(selector, el) {
-  return el.querySelector(selector);
-}
-
-exports = module.exports = function(selector, el){
-  el = el || document;
-  return one(selector, el);
-};
-
-exports.all = function(selector, el){
-  el = el || document;
-  return el.querySelectorAll(selector);
-};
-
-exports.engine = function(obj){
-  if (!obj.one) throw new Error('.one callback required');
-  if (!obj.all) throw new Error('.all callback required');
-  one = obj.one;
-  exports.all = obj.all;
-  return exports;
-};
-
-},{}],7:[function(require,module,exports){
-var bind = window.addEventListener ? 'addEventListener' : 'attachEvent',
-    unbind = window.removeEventListener ? 'removeEventListener' : 'detachEvent',
-    prefix = bind !== 'addEventListener' ? 'on' : '';
-
-/**
- * Bind `el` event `type` to `fn`.
- *
- * @param {Element} el
- * @param {String} type
- * @param {Function} fn
- * @param {Boolean} capture
- * @return {Function}
- * @api public
- */
-
-exports.bind = function(el, type, fn, capture){
-  el[bind](prefix + type, fn, capture || false);
-  return fn;
-};
-
-/**
- * Unbind `el` event `type`'s callback `fn`.
- *
- * @param {Element} el
- * @param {String} type
- * @param {Function} fn
- * @param {Boolean} capture
- * @return {Function}
- * @api public
- */
-
-exports.unbind = function(el, type, fn, capture){
-  el[unbind](prefix + type, fn, capture || false);
-  return fn;
-};
-},{}],8:[function(require,module,exports){
+},{"component-delegate":4,"table-editor":11}],2:[function(require,module,exports){
 /*
-	ractive.js v0.5.5
-	2014-07-13 - commit 8b1d34ef 
+	ractive.js v0.6.1
+	2014-10-25 - commit 3a576eb3 
 
 	http://ractivejs.org
 	http://twitter.com/RactiveJS
@@ -296,10 +61,6 @@ exports.unbind = function(el, type, fn, capture){
 	/* config/defaults/options.js */
 	var options = function() {
 
-		// These are both the values for Ractive.defaults
-		// as well as the determination for whether an option
-		// value will be placed on Component.defaults
-		// (versus directly on Component) during an extend operation
 		var defaultOptions = {
 			// render placement:
 			el: void 0,
@@ -309,6 +70,7 @@ exports.unbind = function(el, type, fn, capture){
 				v: 1,
 				t: []
 			},
+			yield: null,
 			// parse:
 			preserveWhitespace: false,
 			sanitize: false,
@@ -468,31 +230,6 @@ exports.unbind = function(el, type, fn, capture){
 					}
 					return intermediate;
 				};
-			},
-			cssLength: function( from, to ) {
-				var fromMatch, toMatch, fromUnit, toUnit, fromValue, toValue, unit, delta;
-				if ( from !== 0 && typeof from !== 'string' || to !== 0 && typeof to !== 'string' ) {
-					return null;
-				}
-				fromMatch = cssLengthPattern.exec( from );
-				toMatch = cssLengthPattern.exec( to );
-				fromUnit = fromMatch ? fromMatch[ 2 ] : '';
-				toUnit = toMatch ? toMatch[ 2 ] : '';
-				if ( fromUnit && toUnit && fromUnit !== toUnit ) {
-					return null;
-				}
-				unit = fromUnit || toUnit;
-				fromValue = fromMatch ? +fromMatch[ 1 ] : 0;
-				toValue = toMatch ? +toMatch[ 1 ] : 0;
-				delta = toValue - fromValue;
-				if ( !delta ) {
-					return function() {
-						return fromValue + unit;
-					};
-				}
-				return function( t ) {
-					return fromValue + t * delta + unit;
-				};
 			}
 		};
 		return interpolators;
@@ -510,6 +247,136 @@ exports.unbind = function(el, type, fn, capture){
 		return svg;
 	}();
 
+	/* utils/warn.js */
+	var warn = function() {
+
+		/* global console */
+		var warn, warned = {};
+		if ( typeof console !== 'undefined' && typeof console.warn === 'function' && typeof console.warn.apply === 'function' ) {
+			warn = function( message, allowDuplicates ) {
+				if ( !allowDuplicates ) {
+					if ( warned[ message ] ) {
+						return;
+					}
+					warned[ message ] = true;
+				}
+				console.warn( '%cRactive.js: %c' + message, 'color: rgb(114, 157, 52);', 'color: rgb(85, 85, 85);' );
+			};
+		} else {
+			warn = function() {};
+		}
+		return warn;
+	}();
+
+	/* config/errors.js */
+	var errors = {
+		missingParser: 'Missing Ractive.parse - cannot parse template. Either preparse or use the version that includes the parser',
+		mergeComparisonFail: 'Merge operation: comparison failed. Falling back to identity checking',
+		noComponentEventArguments: 'Components currently only support simple events - you cannot include arguments. Sorry!',
+		noTemplateForPartial: 'Could not find template for partial "{name}"',
+		noNestedPartials: 'Partials ({{>{name}}}) cannot contain nested inline partials',
+		evaluationError: 'Error evaluating "{uniqueString}": {err}',
+		badArguments: 'Bad arguments "{arguments}". I\'m not allowed to argue unless you\'ve paid.',
+		failedComputation: 'Failed to compute "{key}": {err}',
+		missingPlugin: 'Missing "{name}" {plugin} plugin. You may need to download a {plugin} via http://docs.ractivejs.org/latest/plugins#{plugin}s',
+		badRadioInputBinding: 'A radio input can have two-way binding on its name attribute, or its checked attribute - not both',
+		noRegistryFunctionReturn: 'A function was specified for "{name}" {registry}, but no {registry} was returned',
+		defaultElSpecified: 'The <{name}/> component has a default `el` property; it has been disregarded',
+		noElementProxyEventWildcards: 'Only component proxy-events may contain "*" wildcards, <{element} on-{event}/> is not valid.',
+		methodDeprecated: 'The method "{deprecated}" has been deprecated in favor of "{replacement}" and will likely be removed in a future release. See http://docs.ractivejs.org/latest/migrating for more information.'
+	};
+
+	/* utils/log.js */
+	var log = function( consolewarn, errors ) {
+
+		var log = {
+			warn: function( options, passthru ) {
+				if ( !options.debug && !passthru ) {
+					return;
+				}
+				this.warnAlways( options );
+			},
+			warnAlways: function( options ) {
+				this.logger( getMessage( options ), options.allowDuplicates );
+			},
+			error: function( options ) {
+				this.errorOnly( options );
+				if ( !options.debug ) {
+					this.warn( options, true );
+				}
+			},
+			errorOnly: function( options ) {
+				if ( options.debug ) {
+					this.critical( options );
+				}
+			},
+			critical: function( options ) {
+				var err = options.err || new Error( getMessage( options ) );
+				this.thrower( err );
+			},
+			logger: consolewarn,
+			thrower: function( err ) {
+				throw err;
+			}
+		};
+
+		function getMessage( options ) {
+			var message = errors[ options.message ] || options.message || '';
+			return interpolate( message, options.args );
+		}
+		// simple interpolation. probably quicker (and better) out there,
+		// but log is not in golden path of execution, only exceptions
+		function interpolate( message, args ) {
+			return message.replace( /{([^{}]*)}/g, function( a, b ) {
+				return args[ b ];
+			} );
+		}
+		return log;
+	}( warn, errors );
+
+	/* Ractive/prototype/shared/hooks/Hook.js */
+	var Ractive$shared_hooks_Hook = function( log ) {
+
+		var deprecations = {
+			construct: {
+				deprecated: 'beforeInit',
+				replacement: 'onconstruct'
+			},
+			render: {
+				deprecated: 'init',
+				message: 'The "init" method has been deprecated ' + 'and will likely be removed in a future release. ' + 'You can either use the "oninit" method which will fire ' + 'only once prior to, and regardless of, any eventual ractive ' + 'instance being rendered, or if you need to access the ' + 'rendered DOM, use "onrender" instead. ' + 'See http://docs.ractivejs.org/latest/migrating for more information.'
+			},
+			complete: {
+				deprecated: 'complete',
+				replacement: 'oncomplete'
+			}
+		};
+
+		function Hook( event ) {
+			this.event = event;
+			this.method = 'on' + event;
+			this.deprecate = deprecations[ event ];
+		}
+		Hook.prototype.fire = function( ractive, arg ) {
+			function call( method ) {
+				if ( ractive[ method ] ) {
+					arg ? ractive[ method ]( arg ) : ractive[ method ]();
+					return true;
+				}
+			}
+			call( this.method );
+			if ( !ractive[ this.method ] && this.deprecate && call( this.deprecate.deprecated ) ) {
+				log.warnAlways( {
+					debug: ractive.debug,
+					message: this.deprecate.message || 'methodDeprecated',
+					args: this.deprecate
+				} );
+			}
+			arg ? ractive.fire( this.event, arg ) : ractive.fire( this.event );
+		};
+		return Hook;
+	}( log );
+
 	/* utils/removeFromArray.js */
 	var removeFromArray = function( array, member ) {
 		var index = array.indexOf( member );
@@ -521,6 +388,7 @@ exports.unbind = function(el, type, fn, capture){
 	/* utils/Promise.js */
 	var Promise = function() {
 
+		var __export;
 		var _Promise, PENDING = {},
 			FULFILLED = {},
 			REJECTED = {};
@@ -623,7 +491,7 @@ exports.unbind = function(el, type, fn, capture){
 				} );
 			};
 		}
-		return _Promise;
+		__export = _Promise;
 		// TODO use MutationObservers or something to simulate setImmediate
 		function wait( callback ) {
 			setTimeout( callback, 0 );
@@ -691,6 +559,7 @@ exports.unbind = function(el, type, fn, capture){
 				fulfil( x );
 			}
 		}
+		return __export;
 	}();
 
 	/* utils/normaliseRef.js */
@@ -705,7 +574,7 @@ exports.unbind = function(el, type, fn, capture){
 	/* shared/getInnerContext.js */
 	var getInnerContext = function( fragment ) {
 		do {
-			if ( fragment.context ) {
+			if ( fragment.context !== undefined ) {
 				return fragment.context;
 			}
 		} while ( fragment = fragment.parent );
@@ -724,47 +593,81 @@ exports.unbind = function(el, type, fn, capture){
 	};
 
 	/* shared/createComponentBinding.js */
-	var createComponentBinding = function( circular, isArray, isEqual ) {
+	var createComponentBinding = function( circular, isEqual ) {
 
 		var runloop;
 		circular.push( function() {
 			return runloop = circular.runloop;
 		} );
-		var Binding = function( ractive, keypath, otherInstance, otherKeypath, priority ) {
+		var Binding = function( ractive, keypath, otherInstance, otherKeypath ) {
+			var this$0 = this;
 			this.root = ractive;
 			this.keypath = keypath;
-			this.priority = priority;
 			this.otherInstance = otherInstance;
 			this.otherKeypath = otherKeypath;
+			this.lock = function() {
+				return this$0.updating = true;
+			};
+			this.unlock = function() {
+				return this$0.updating = false;
+			};
 			this.bind();
 			this.value = this.root.viewmodel.get( this.keypath );
 		};
 		Binding.prototype = {
+			isLocked: function() {
+				return this.updating || this.counterpart && this.counterpart.updating;
+			},
+			shuffle: function( newIndices, value ) {
+				this.propagateChange( value, newIndices );
+			},
 			setValue: function( value ) {
-				var this$0 = this;
+				this.propagateChange( value );
+			},
+			propagateChange: function( value, newIndices ) {
+				var other;
 				// Only *you* can prevent infinite loops
-				if ( this.updating || this.counterpart && this.counterpart.updating ) {
+				if ( this.isLocked() ) {
 					this.value = value;
-					return;
-				}
-				// Is this a smart array update? If so, it'll update on its
-				// own, we shouldn't do anything
-				if ( isArray( value ) && value._ractive && value._ractive.setting ) {
 					return;
 				}
 				if ( !isEqual( value, this.value ) ) {
-					this.updating = true;
+					this.lock();
 					// TODO maybe the case that `value === this.value` - should that result
 					// in an update rather than a set?
-					runloop.addViewmodel( this.otherInstance.viewmodel );
-					this.otherInstance.viewmodel.set( this.otherKeypath, value );
+					// if the other viewmodel is already locked up, need to do a deferred update
+					if ( !runloop.addViewmodel( other = this.otherInstance.viewmodel ) && this.counterpart.value !== value ) {
+						runloop.scheduleTask( function() {
+							return runloop.addViewmodel( other );
+						} );
+					}
+					if ( newIndices ) {
+						other.smartUpdate( this.otherKeypath, value, newIndices );
+					} else {
+						if ( isSettable( other, this.otherKeypath ) ) {
+							other.set( this.otherKeypath, value );
+						}
+					}
 					this.value = value;
 					// TODO will the counterpart update after this line, during
 					// the runloop end cycle? may be a problem...
-					runloop.scheduleTask( function() {
-						return this$0.updating = false;
-					} );
+					runloop.scheduleTask( this.unlock );
 				}
+			},
+			refineValue: function( keypaths ) {
+				var this$0 = this;
+				var other;
+				if ( this.isLocked() ) {
+					return;
+				}
+				this.lock();
+				runloop.addViewmodel( other = this.otherInstance.viewmodel );
+				keypaths.map( function( keypath ) {
+					return this$0.otherKeypath + keypath.substr( this$0.keypath.length );
+				} ).forEach( function( keypath ) {
+					return other.mark( keypath );
+				} );
+				runloop.scheduleTask( this.unlock );
 			},
 			bind: function() {
 				this.root.viewmodel.register( this.keypath, this );
@@ -779,37 +682,42 @@ exports.unbind = function(el, type, fn, capture){
 				this.root.viewmodel.unregister( this.keypath, this );
 			}
 		};
+
+		function isSettable( viewmodel, keypath ) {
+			var computed = viewmodel.computations[ keypath ];
+			return !computed || computed.setter;
+		}
 		return function createComponentBinding( component, parentInstance, parentKeypath, childKeypath ) {
-			var hash, childInstance, bindings, priority, parentToChildBinding, childToParentBinding;
+			var hash, childInstance, bindings, parentToChildBinding, childToParentBinding;
 			hash = parentKeypath + '=' + childKeypath;
 			bindings = component.bindings;
 			if ( bindings[ hash ] ) {
 				// TODO does this ever happen?
 				return;
 			}
-			bindings[ hash ] = true;
 			childInstance = component.instance;
-			priority = component.parentFragment.priority;
-			parentToChildBinding = new Binding( parentInstance, parentKeypath, childInstance, childKeypath, priority );
+			parentToChildBinding = new Binding( parentInstance, parentKeypath, childInstance, childKeypath );
 			bindings.push( parentToChildBinding );
 			if ( childInstance.twoway ) {
-				childToParentBinding = new Binding( childInstance, childKeypath, parentInstance, parentKeypath, 1 );
+				childToParentBinding = new Binding( childInstance, childKeypath, parentInstance, parentKeypath );
 				bindings.push( childToParentBinding );
 				parentToChildBinding.counterpart = childToParentBinding;
 				childToParentBinding.counterpart = parentToChildBinding;
 			}
+			bindings[ hash ] = parentToChildBinding;
 		};
-	}( circular, isArray, isEqual );
+	}( circular, isEqual );
 
 	/* shared/resolveRef.js */
 	var resolveRef = function( normaliseRef, getInnerContext, createComponentBinding ) {
 
+		var __export;
 		var ancestorErrorMessage, getOptions;
 		ancestorErrorMessage = 'Could not resolve reference - too many "../" prefixes';
 		getOptions = {
 			evaluateWrapped: true
 		};
-		return function resolveRef( ractive, ref, fragment ) {
+		__export = function resolveRef( ractive, ref, fragment, isParentLookup ) {
 			var context, key, index, keypath, parentValue, hasContextChain, parentKeys, childKeys, parentKeypath, childKeypath;
 			ref = normaliseRef( ref );
 			// If a reference begins '~/', it's a top-level reference
@@ -823,6 +731,8 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			// ...otherwise we need to find the keypath
 			key = ref.split( '.' )[ 0 ];
+			// get() in viewmodel creation means no fragment (yet)
+			fragment = fragment || {};
 			do {
 				context = fragment.context;
 				if ( !context ) {
@@ -841,6 +751,7 @@ exports.unbind = function(el, type, fn, capture){
 			// If this is an inline component, and it's not isolated, we
 			// can try going up the scope chain
 			if ( ractive._parent && !ractive.isolated ) {
+				hasContextChain = true;
 				fragment = ractive.component.parentFragment;
 				// Special case - index refs
 				if ( fragment.indexRefs && ( index = fragment.indexRefs[ ref ] ) !== undefined ) {
@@ -850,7 +761,7 @@ exports.unbind = function(el, type, fn, capture){
 					ractive.viewmodel.set( ref, index, true );
 					return;
 				}
-				keypath = resolveRef( ractive._parent, ref, fragment );
+				keypath = resolveRef( ractive._parent, ref, fragment, true );
 				if ( keypath ) {
 					// We need to create an inter-component binding
 					// If parent keypath is 'one.foo' and child is 'two.foo', we bind
@@ -870,7 +781,10 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			// If there's no context chain, and the instance is either a) isolated or
 			// b) an orphan, then we know that the keypath is identical to the reference
-			if ( !hasContextChain ) {
+			if ( !isParentLookup && !hasContextChain ) {
+				// the data object needs to have a property by this name,
+				// to prevent future failed lookups
+				ractive.viewmodel.set( ref, undefined );
 				return ref;
 			}
 			if ( ractive.viewmodel.get( ref ) !== undefined ) {
@@ -902,6 +816,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return baseContext + ref.replace( /^\.\//, '.' );
 		}
+		return __export;
 	}( normaliseRef, getInnerContext, createComponentBinding );
 
 	/* global/TransitionManager.js */
@@ -990,9 +905,11 @@ exports.unbind = function(el, type, fn, capture){
 	}( removeFromArray );
 
 	/* global/runloop.js */
-	var runloop = function( circular, removeFromArray, Promise, resolveRef, TransitionManager ) {
+	var runloop = function( circular, Hook, removeFromArray, Promise, resolveRef, TransitionManager ) {
 
-		var batch, runloop, unresolved = [];
+		var __export;
+		var batch, runloop, unresolved = [],
+			changeHook = new Hook( 'change' );
 		runloop = {
 			start: function( instance, returnPromise ) {
 				var promise, fulfilPromise;
@@ -1006,7 +923,8 @@ exports.unbind = function(el, type, fn, capture){
 					transitionManager: new TransitionManager( fulfilPromise, batch && batch.transitionManager ),
 					views: [],
 					tasks: [],
-					viewmodels: []
+					viewmodels: [],
+					instance: instance
 				};
 				if ( instance ) {
 					batch.viewmodels.push( instance.viewmodel );
@@ -1016,15 +934,21 @@ exports.unbind = function(el, type, fn, capture){
 			end: function() {
 				flushChanges();
 				batch.transitionManager.init();
+				if ( !batch.previousBatch && !!batch.instance )
+					batch.instance.viewmodel.changes = [];
 				batch = batch.previousBatch;
 			},
 			addViewmodel: function( viewmodel ) {
 				if ( batch ) {
 					if ( batch.viewmodels.indexOf( viewmodel ) === -1 ) {
 						batch.viewmodels.push( viewmodel );
+						return true;
+					} else {
+						return false;
 					}
 				} else {
 					viewmodel.applyChanges();
+					return false;
 				}
 			},
 			registerTransition: function( transition ) {
@@ -1044,16 +968,24 @@ exports.unbind = function(el, type, fn, capture){
 			detachWhenReady: function( thing ) {
 				batch.transitionManager.detachQueue.push( thing );
 			},
-			scheduleTask: function( task ) {
+			scheduleTask: function( task, postRender ) {
+				var _batch;
 				if ( !batch ) {
 					task();
 				} else {
-					batch.tasks.push( task );
+					_batch = batch;
+					while ( postRender && _batch.previousBatch ) {
+						// this can't happen until the DOM has been fully updated
+						// otherwise in some situations (with components inside elements)
+						// transitions and decorators will initialise prematurely
+						_batch = _batch.previousBatch;
+					}
+					_batch.tasks.push( task );
 				}
 			}
 		};
 		circular.runloop = runloop;
-		return runloop;
+		__export = runloop;
 
 		function flushChanges() {
 			var i, thing, changeHash;
@@ -1061,7 +993,7 @@ exports.unbind = function(el, type, fn, capture){
 				thing = batch.viewmodels[ i ];
 				changeHash = thing.applyChanges();
 				if ( changeHash ) {
-					thing.ractive.fire( 'change', changeHash );
+					changeHook.fire( thing.ractive, changeHash );
 				}
 			}
 			batch.viewmodels.length = 0;
@@ -1084,27 +1016,34 @@ exports.unbind = function(el, type, fn, capture){
 		}
 
 		function attemptKeypathResolution() {
-			var array, thing, keypath;
-			if ( !unresolved.length ) {
-				return;
-			}
+			var i, item, keypath, resolved;
+			i = unresolved.length;
 			// see if we can resolve any unresolved references
-			array = unresolved.splice( 0, unresolved.length );
-			while ( thing = array.pop() ) {
-				if ( thing.keypath ) {
-					continue;
+			while ( i-- ) {
+				item = unresolved[ i ];
+				if ( item.keypath ) {
+					// it resolved some other way. TODO how? two-way binding? Seems
+					// weird that we'd still end up here
+					unresolved.splice( i, 1 );
 				}
-				keypath = resolveRef( thing.root, thing.ref, thing.parentFragment );
-				if ( keypath !== undefined ) {
-					// If we've resolved the keypath, we can initialise this item
-					thing.resolve( keypath );
-				} else {
-					// If we can't resolve the reference, try again next time
-					unresolved.push( thing );
+				if ( keypath = resolveRef( item.root, item.ref, item.parentFragment ) ) {
+					( resolved || ( resolved = [] ) ).push( {
+						item: item,
+						keypath: keypath
+					} );
+					unresolved.splice( i, 1 );
 				}
+			}
+			if ( resolved ) {
+				resolved.forEach( resolve );
 			}
 		}
-	}( circular, removeFromArray, Promise, resolveRef, TransitionManager );
+
+		function resolve( resolved ) {
+			resolved.item.resolve( resolved.keypath );
+		}
+		return __export;
+	}( circular, Ractive$shared_hooks_Hook, removeFromArray, Promise, resolveRef, TransitionManager );
 
 	/* utils/createBranch.js */
 	var createBranch = function() {
@@ -1118,6 +1057,7 @@ exports.unbind = function(el, type, fn, capture){
 	/* viewmodel/prototype/get/magicAdaptor.js */
 	var viewmodel$get_magicAdaptor = function( runloop, createBranch, isArray ) {
 
+		var __export;
 		var magicAdaptor, MagicWrapper;
 		try {
 			Object.defineProperty( {}, 'test', {
@@ -1231,7 +1171,7 @@ exports.unbind = function(el, type, fn, capture){
 		} catch ( err ) {
 			magicAdaptor = false;
 		}
-		return magicAdaptor;
+		__export = magicAdaptor;
 
 		function createAccessors( originalWrapper, value, template ) {
 			var object, property, oldGet, oldSet, get, set;
@@ -1285,6 +1225,7 @@ exports.unbind = function(el, type, fn, capture){
 				configurable: true
 			} );
 		}
+		return __export;
 	}( runloop, createBranch, isArray );
 
 	/* config/magic.js */
@@ -1531,36 +1472,16 @@ exports.unbind = function(el, type, fn, capture){
 		return animations;
 	}( requestAnimationFrame, getTime, runloop );
 
-	/* utils/warn.js */
-	var warn = function() {
-
-		/* global console */
-		var warn, warned = {};
-		if ( typeof console !== 'undefined' && typeof console.warn === 'function' && typeof console.warn.apply === 'function' ) {
-			warn = function( message, allowDuplicates ) {
-				if ( !allowDuplicates ) {
-					if ( warned[ message ] ) {
-						return;
-					}
-					warned[ message ] = true;
-				}
-				console.warn( message );
-			};
-		} else {
-			warn = function() {};
-		}
-		return warn;
-	}();
-
 	/* config/options/css/transform.js */
 	var transform = function() {
 
+		var __export;
 		var selectorsPattern = /(?:^|\})?\s*([^\{\}]+)\s*\{/g,
 			commentsPattern = /\/\*.*?\*\//g,
 			selectorUnitPattern = /((?:(?:\[[^\]+]\])|(?:[^\s\+\>\~:]))+)((?::[^\s\+\>\~]+)?\s*[\s\+\>\~]?)\s*/g,
 			mediaQueryPattern = /^@media/,
 			dataRvcGuidPattern = /\[data-rvcguid="[a-z0-9-]+"]/g;
-		return function transformCss( css, guid ) {
+		__export = function transformCss( css, guid ) {
 			var transformed, addGuid;
 			addGuid = function( selector ) {
 				var selectorUnits, match, unit, dataAttr, base, prepended, appended, i, transformed = [];
@@ -1614,6 +1535,7 @@ exports.unbind = function(el, type, fn, capture){
 		function extractString( unit ) {
 			return unit.str;
 		}
+		return __export;
 	}();
 
 	/* config/options/css/css.js */
@@ -1645,7 +1567,8 @@ exports.unbind = function(el, type, fn, capture){
 	/* utils/wrapMethod.js */
 	var wrapMethod = function() {
 
-		return function( method, superMethod, force ) {
+		var __export;
+		__export = function( method, superMethod, force ) {
 			if ( force || needsSuper( method, superMethod ) ) {
 				return function() {
 					var hasSuper = '_super' in this,
@@ -1666,22 +1589,27 @@ exports.unbind = function(el, type, fn, capture){
 		function needsSuper( method, superMethod ) {
 			return typeof superMethod === 'function' && /_super/.test( method );
 		}
+		return __export;
 	}();
 
 	/* config/options/data.js */
 	var data = function( wrap ) {
 
+		var __export;
 		var dataConfig = {
 			name: 'data',
 			extend: extend,
 			init: init,
 			reset: reset
 		};
-		return dataConfig;
+		__export = dataConfig;
 
 		function combine( Parent, target, options ) {
 			var value = options.data || {},
 				parentValue = getAddedKeys( Parent.prototype.data );
+			if ( typeof value !== 'object' && typeof value !== 'function' ) {
+				throw new TypeError( 'data option must be an object or a function, "' + value + '" is not valid' );
+			}
 			return dispatch( parentValue, value );
 		}
 
@@ -1794,22 +1722,8 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return wrap( childFn, parentFn );
 		}
+		return __export;
 	}( wrapMethod );
-
-	/* config/errors.js */
-	var errors = {
-		missingParser: 'Missing Ractive.parse - cannot parse template. Either preparse or use the version that includes the parser',
-		mergeComparisonFail: 'Merge operation: comparison failed. Falling back to identity checking',
-		noComponentEventArguments: 'Components currently only support simple events - you cannot include arguments. Sorry!',
-		noTemplateForPartial: 'Could not find template for partial "{name}"',
-		noNestedPartials: 'Partials ({{>{name}}}) cannot contain nested inline partials',
-		evaluationError: 'Error evaluating "{uniqueString}": {err}',
-		badArguments: 'Bad arguments "{arguments}". I\'m not allowed to argue unless you\'ve paid.',
-		failedComputation: 'Failed to compute "{key}": {err}',
-		missingPlugin: 'Missing "{name}" {plugin} plugin. You may need to download a {plugin} via http://docs.ractivejs.org/latest/plugins#{plugin}s',
-		badRadioInputBinding: 'A radio input can have two-way binding on its name attribute, or its checked attribute - not both',
-		noRegistryFunctionReturn: 'A function was specified for "{name}" {registry}, but no {registry} was returned'
-	};
 
 	/* config/types.js */
 	var types = {
@@ -1846,7 +1760,8 @@ exports.unbind = function(el, type, fn, capture){
 		SECTION_IF: 50,
 		SECTION_UNLESS: 51,
 		SECTION_EACH: 52,
-		SECTION_WITH: 53
+		SECTION_WITH: 53,
+		SECTION_IF_WITH: 54
 	};
 
 	/* utils/create.js */
@@ -1886,7 +1801,6 @@ exports.unbind = function(el, type, fn, capture){
 	/* parse/Parser/expressions/primary/literal/numberLiteral.js */
 	var numberLiteral = function( types ) {
 
-		// bulletproof number regex from https://gist.github.com/Rich-Harris/7544330
 		var numberPattern = /^(?:[+-]?)(?:(?:(?:0|[1-9]\d*)?\.\d+)|(?:(?:0|[1-9]\d*)\.)|(?:0|[1-9]\d*))(?:[eE][+-]?\d+)?/;
 		return function( parser ) {
 			var result;
@@ -2198,7 +2112,7 @@ exports.unbind = function(el, type, fn, capture){
 		};
 		arrayMemberPattern = /^\[(0|[1-9][0-9]*)\]/;
 		// if a reference is a browser global, we don't deference it later, so it needs special treatment
-		globals = /^(?:Array|Date|RegExp|decodeURIComponent|decodeURI|encodeURIComponent|encodeURI|isFinite|isNaN|parseFloat|parseInt|JSON|Math|NaN|undefined|null)$/;
+		globals = /^(?:Array|console|Date|RegExp|decodeURIComponent|decodeURI|encodeURIComponent|encodeURI|isFinite|isNaN|parseFloat|parseInt|JSON|Math|NaN|undefined|null)$/;
 		// keywords are not valid references, with the exception of `this`
 		keywords = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with)$/;
 		return function( parser ) {
@@ -2216,9 +2130,9 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			if ( !ancestor ) {
 				// we might have an implicit iterator or a restricted reference
-				dot = parser.matchString( '.' ) || '';
+				dot = parser.matchString( './' ) || parser.matchString( '.' ) || '';
 			}
-			name = parser.matchPattern( /^@(?:index|key)/ ) || parser.matchPattern( patterns.name ) || '';
+			name = parser.matchPattern( /^@(?:keypath|index|key)/ ) || parser.matchPattern( patterns.name ) || '';
 			// bug out if it's a keyword
 			if ( keywords.test( name ) ) {
 				parser.pos = startPos;
@@ -2476,7 +2390,6 @@ exports.unbind = function(el, type, fn, capture){
 	/* parse/Parser/expressions/conditional.js */
 	var conditional = function( types, getLogicalOr, errors ) {
 
-		// The conditional operator is the lowest precedence operator, so we start here
 		return function( parser ) {
 			var start, expression, ifTrue, ifFalse;
 			expression = getLogicalOr( parser );
@@ -2517,7 +2430,8 @@ exports.unbind = function(el, type, fn, capture){
 	/* parse/Parser/utils/flattenExpression.js */
 	var flattenExpression = function( types, isObject ) {
 
-		return function( expression ) {
+		var __export;
+		__export = function( expression ) {
 			var refs = [],
 				flattened;
 			extractRefs( expression, refs );
@@ -2593,11 +2507,12 @@ exports.unbind = function(el, type, fn, capture){
 				case types.CONDITIONAL:
 					return stringify( parser, node.o[ 0 ], refs ) + '?' + stringify( parser, node.o[ 1 ], refs ) + ':' + stringify( parser, node.o[ 2 ], refs );
 				case types.REFERENCE:
-					return '${' + refs.indexOf( node.n ) + '}';
+					return '_' + refs.indexOf( node.n );
 				default:
 					parser.error( 'Expected legal JavaScript' );
 			}
 		}
+		return __export;
 	}( types, isObject );
 
 	/* parse/Parser/_Parser.js */
@@ -2615,10 +2530,17 @@ exports.unbind = function(el, type, fn, capture){
 		};
 		ParseError.prototype = Error.prototype;
 		Parser = function( str, options ) {
-			var items, item;
+			var items, item, lineStart = 0;
 			this.str = str;
 			this.options = options || {};
 			this.pos = 0;
+			this.lines = this.str.split( '\n' );
+			this.lineEnds = this.lines.map( function( line ) {
+				var lineEnd = lineStart + line.length + 1;
+				// +1 for the newline
+				lineStart = lineEnd;
+				return lineEnd;
+			}, 0 );
 			// Custom init logic
 			if ( this.init )
 				this.init( str, options );
@@ -2655,38 +2577,33 @@ exports.unbind = function(el, type, fn, capture){
 				return getConditional( this );
 			},
 			flattenExpression: flattenExpression,
-			getLinePos: function() {
-				var lines, currentLine, currentLineEnd, nextLineEnd, lineNum, columnNum;
-				lines = this.str.split( '\n' );
-				lineNum = -1;
-				nextLineEnd = 0;
-				do {
-					currentLineEnd = nextLineEnd;
-					lineNum++;
-					currentLine = lines[ lineNum ];
-					nextLineEnd += currentLine.length + 1;
-				} while ( nextLineEnd <= this.pos );
-				columnNum = this.pos - currentLineEnd;
-				return {
-					line: lineNum + 1,
-					ch: columnNum + 1,
-					text: currentLine,
-					toJSON: function() {
-						return [
-							this.line,
-							this.ch
-						];
-					},
-					toString: function() {
-						return 'line ' + this.line + ' character ' + this.ch + ':\n' + this.text + '\n' + this.text.substr( 0, this.ch - 1 ).replace( /[\S]/g, ' ' ) + '^----';
-					}
-				};
+			getLinePos: function( char ) {
+				var lineNum = 0,
+					lineStart = 0,
+					columnNum;
+				while ( char >= this.lineEnds[ lineNum ] ) {
+					lineStart = this.lineEnds[ lineNum ];
+					lineNum += 1;
+				}
+				columnNum = char - lineStart;
+				return [
+					lineNum + 1,
+					columnNum + 1,
+					char
+				];
 			},
-			error: function( err ) {
-				var pos, message;
-				pos = this.getLinePos();
-				message = err + ' at ' + pos;
-				throw new ParseError( message );
+			error: function( message ) {
+				var pos, lineNum, columnNum, line, annotation, error;
+				pos = this.getLinePos( this.pos );
+				lineNum = pos[ 0 ];
+				columnNum = pos[ 1 ];
+				line = this.lines[ pos[ 0 ] - 1 ];
+				annotation = line + '\n' + new Array( pos[ 1 ] ).join( ' ' ) + '^----';
+				error = new ParseError( message + ' at line ' + lineNum + ' character ' + columnNum + ':\n' + annotation );
+				error.line = pos[ 0 ];
+				error.character = pos[ 1 ];
+				error.shortMessage = message;
+				throw error;
 			},
 			matchString: function( string ) {
 				if ( this.str.substr( this.pos, string.length ) === string ) {
@@ -2814,10 +2731,11 @@ exports.unbind = function(el, type, fn, capture){
 	var handlebarsBlockCodes = function( types ) {
 
 		return {
+			'each': types.SECTION_EACH,
 			'if': types.SECTION_IF,
-			'unless': types.SECTION_UNLESS,
+			'if-with': types.SECTION_IF_WITH,
 			'with': types.SECTION_WITH,
-			'each': types.SECTION_EACH
+			'unless': types.SECTION_UNLESS
 		};
 	}( types );
 
@@ -2827,13 +2745,14 @@ exports.unbind = function(el, type, fn, capture){
 	/* parse/converters/mustache/content.js */
 	var content = function( types, mustacheType, handlebarsBlockCodes ) {
 
+		var __export;
 		var indexRefPattern = /^\s*:\s*([a-zA-Z_$][a-zA-Z_$0-9]*)/,
 			arrayMemberPattern = /^[0-9][1-9]*$/,
 			handlebarsBlockPattern = new RegExp( '^(' + Object.keys( handlebarsBlockCodes ).join( '|' ) + ')\\b' ),
 			legalReference;
 		legalReference = /^[a-zA-Z$_0-9]+(?:(\.[a-zA-Z$_0-9]+)|(\[[a-zA-Z$_0-9]+\]))*$/;
-		return function( parser, delimiterType ) {
-			var start, pos, mustache, type, block, expression, i, remaining, index, delimiters, referenceExpression;
+		__export = function( parser, delimiterType ) {
+			var start, pos, mustache, type, block, expression, i, remaining, index, delimiters;
 			start = parser.pos;
 			mustache = {};
 			delimiters = parser[ delimiterType.delimiters ];
@@ -2846,17 +2765,27 @@ exports.unbind = function(el, type, fn, capture){
 			} else {
 				// We need to test for expressions before we test for mustache type, because
 				// an expression that begins '!' looks a lot like a comment
-				if ( parser.remaining()[ 0 ] === '!' && ( expression = parser.readExpression() ) ) {
-					mustache.t = types.INTERPOLATOR;
-					// Was it actually an expression, or a comment block in disguise?
-					parser.allowWhitespace();
-					if ( parser.matchString( delimiters[ 1 ] ) ) {
-						// expression
-						parser.pos -= delimiters[ 1 ].length;
-					} else {
-						// comment block
-						parser.pos = start;
-						expression = null;
+				if ( parser.remaining()[ 0 ] === '!' ) {
+					try {
+						expression = parser.readExpression();
+						// Was it actually an expression, or a comment block in disguise?
+						parser.allowWhitespace();
+						if ( parser.remaining().indexOf( delimiters[ 1 ] ) ) {
+							expression = null;
+						} else {
+							mustache.t = types.INTERPOLATOR;
+						}
+					} catch ( err ) {}
+					if ( !expression ) {
+						index = parser.remaining().indexOf( delimiters[ 1 ] );
+						if ( ~index ) {
+							parser.pos += index;
+						} else {
+							parser.error( 'Expected closing delimiter (\'' + delimiters[ 1 ] + '\')' );
+						}
+						return {
+							t: types.COMMENT
+						};
 					}
 				}
 				if ( !expression ) {
@@ -2873,7 +2802,7 @@ exports.unbind = function(el, type, fn, capture){
 						remaining = parser.remaining();
 						index = remaining.indexOf( delimiters[ 1 ] );
 						if ( index !== -1 ) {
-							mustache.r = remaining.substr( 0, index );
+							mustache.r = remaining.substr( 0, index ).split( ' ' )[ 0 ];
 							parser.pos += index;
 							return mustache;
 						}
@@ -2885,6 +2814,18 @@ exports.unbind = function(el, type, fn, capture){
 				parser.allowWhitespace();
 				// get expression
 				expression = parser.readExpression();
+				// If this is a partial, it may have a context (e.g. `{{>item foo}}`). These
+				// cases involve a bit of a hack - we want to turn it into the equivalent of
+				// `{{#with foo}}{{>item}}{{/with}}`, but to get there we temporarily append
+				// a 'contextPartialExpression' to the mustache, and process the context instead of
+				// the reference
+				var temp;
+				if ( mustache.t === types.PARTIAL && expression && ( temp = parser.readExpression() ) ) {
+					mustache = {
+						contextPartialExpression: expression
+					};
+					expression = temp;
+				}
 				// With certain valid references that aren't valid expressions,
 				// e.g. {{1.foo}}, we have a problem: it looks like we've got an
 				// expression, but the expression didn't consume the entire
@@ -2908,6 +2849,22 @@ exports.unbind = function(el, type, fn, capture){
 					parser.pos = pos;
 				}
 			}
+			refineExpression( parser, expression, mustache );
+			// if there was context, process the expression now and save it for later
+			if ( mustache.contextPartialExpression ) {
+				mustache.contextPartialExpression = [ refineExpression( parser, mustache.contextPartialExpression, {
+					t: types.PARTIAL
+				} ) ];
+			}
+			// optional index reference
+			if ( i = parser.matchPattern( indexRefPattern ) ) {
+				mustache.i = i;
+			}
+			return mustache;
+		};
+
+		function refineExpression( parser, expression, mustache ) {
+			var referenceExpression;
 			if ( expression ) {
 				while ( expression.t === types.BRACKETED && expression.x ) {
 					expression = expression.x;
@@ -2925,13 +2882,9 @@ exports.unbind = function(el, type, fn, capture){
 						mustache.x = parser.flattenExpression( expression );
 					}
 				}
+				return mustache;
 			}
-			// optional index reference
-			if ( i = parser.matchPattern( indexRefPattern ) ) {
-				mustache.i = i;
-			}
-			return mustache;
-		};
+		}
 		// TODO refactor this! it's bewildering
 		function getReferenceExpression( parser, expression ) {
 			var members = [],
@@ -2957,20 +2910,26 @@ exports.unbind = function(el, type, fn, capture){
 				m: members
 			};
 		}
+		return __export;
 	}( types, type, handlebarsBlockCodes, legacy );
 
 	/* parse/converters/mustache.js */
 	var mustache = function( types, delimiterChange, delimiterTypes, mustacheContent, handlebarsBlockCodes ) {
 
+		var __export;
 		var delimiterChangeToken = {
-				t: types.DELIMCHANGE,
-				exclude: true
-			},
-			handlebarsIndexRefPattern = /^@(?:index|key)$/;
-		return getMustache;
+			t: types.DELIMCHANGE,
+			exclude: true
+		};
+		__export = getMustache;
 
 		function getMustache( parser ) {
 			var types;
+			// If we're inside a <script> or <style> tag, and we're not
+			// interpolating, bug out
+			if ( parser.interpolate[ parser.inside ] === false ) {
+				return null;
+			}
 			types = delimiterTypes.slice().sort( function compare( a, b ) {
 				// Sort in order of descending opening delimiter length (longer first),
 				// to protect against opening delimiters being substrings of each other
@@ -2986,9 +2945,8 @@ exports.unbind = function(el, type, fn, capture){
 		}
 
 		function getMustacheOfType( parser, delimiterType ) {
-			var start, startPos, mustache, delimiters, children, expectedClose, elseChildren, currentChildren, child, indexRef;
+			var start, mustache, delimiters, children, expectedClose, elseChildren, currentChildren, child;
 			start = parser.pos;
-			startPos = parser.getLinePos();
 			delimiters = parser[ delimiterType.delimiters ];
 			if ( !parser.matchString( delimiters[ 0 ] ) ) {
 				return null;
@@ -3024,8 +2982,13 @@ exports.unbind = function(el, type, fn, capture){
 					parser.error( 'Attempted to close a section that wasn\'t open' );
 				}
 			}
-			// section children
-			if ( isSection( mustache ) ) {
+			// partials with context
+			if ( mustache.contextPartialExpression ) {
+				mustache.f = mustache.contextPartialExpression;
+				mustache.t = types.SECTION;
+				mustache.n = 'with';
+				delete mustache.contextPartialExpression;
+			} else if ( isSection( mustache ) ) {
 				parser.sectionDepth += 1;
 				children = [];
 				currentChildren = children;
@@ -3039,34 +3002,28 @@ exports.unbind = function(el, type, fn, capture){
 					}
 					// {{else}} tags require special treatment
 					if ( child.t === types.INTERPOLATOR && child.r === 'else' ) {
-						switch ( mustache.n ) {
-							case 'unless':
-								parser.error( '{{else}} not allowed in {{#unless}}' );
-								break;
-							case 'with':
-								parser.error( '{{else}} not allowed in {{#with}}' );
-								break;
-							default:
-								currentChildren = elseChildren = [];
-								continue;
+						// no {{else}} allowed in {{#unless}}
+						if ( mustache.n === 'unless' ) {
+							parser.error( '{{else}} not allowed in {{#unless}}' );
+						} else {
+							currentChildren = elseChildren = [];
+							continue;
 						}
 					}
 					currentChildren.push( child );
 				}
 				if ( children.length ) {
 					mustache.f = children;
-					// If this is an 'each' section, and it contains an {{@index}} or {{@key}},
-					// we need to set the index reference accordingly
-					if ( !mustache.i && mustache.n === 'each' && ( indexRef = handlebarsIndexRef( mustache.f ) ) ) {
-						mustache.i = indexRef;
-					}
 				}
 				if ( elseChildren && elseChildren.length ) {
 					mustache.l = elseChildren;
+					if ( mustache.n === 'with' ) {
+						mustache.n = 'if-with';
+					}
 				}
 			}
 			if ( parser.includeLinePositions ) {
-				mustache.p = startPos.toJSON();
+				mustache.p = parser.getLinePos( start );
 			}
 			// Replace block name with code
 			if ( mustache.n ) {
@@ -3078,60 +3035,10 @@ exports.unbind = function(el, type, fn, capture){
 			return mustache;
 		}
 
-		function handlebarsIndexRef( fragment ) {
-			var i, child, indexRef;
-			i = fragment.length;
-			while ( i-- ) {
-				child = fragment[ i ];
-				// Recurse into elements (but not sections)
-				if ( child.t === types.ELEMENT && child.f && ( indexRef = handlebarsIndexRef( child.f ) ) ) {
-					return indexRef;
-				}
-				// Mustache?
-				if ( child.t === types.INTERPOLATOR || child.t === types.TRIPLE || child.t === types.SECTION ) {
-					// Normal reference?
-					if ( child.r && handlebarsIndexRefPattern.test( child.r ) ) {
-						return child.r;
-					}
-					// Expression?
-					if ( child.x && ( indexRef = indexRefContainedInExpression( child.x ) ) ) {
-						return indexRef;
-					}
-					// Reference expression?
-					if ( child.rx && ( indexRef = indexRefContainedInReferenceExpression( child.rx ) ) ) {
-						return indexRef;
-					}
-				}
-			}
-		}
-
-		function indexRefContainedInExpression( expression ) {
-			var i;
-			i = expression.r.length;
-			while ( i-- ) {
-				if ( handlebarsIndexRefPattern.test( expression.r[ i ] ) ) {
-					return expression.r[ i ];
-				}
-			}
-		}
-
-		function indexRefContainedInReferenceExpression( referenceExpression ) {
-			var i, indexRef, member;
-			i = referenceExpression.m.length;
-			while ( i-- ) {
-				member = referenceExpression.m[ i ];
-				if ( member.r && ( indexRef = indexRefContainedInExpression( member ) ) ) {
-					return indexRef;
-				}
-				if ( member.t === types.REFERENCE && handlebarsIndexRefPattern.test( member.n ) ) {
-					return member.n;
-				}
-			}
-		}
-
 		function isSection( mustache ) {
 			return mustache.t === types.SECTION || mustache.t === types.INVERTED;
 		}
+		return __export;
 	}( types, delimiterChange, delimiterTypes, content, handlebarsBlockCodes );
 
 	/* parse/converters/comment.js */
@@ -3140,8 +3047,8 @@ exports.unbind = function(el, type, fn, capture){
 		var OPEN_COMMENT = '<!--',
 			CLOSE_COMMENT = '-->';
 		return function( parser ) {
-			var startPos, content, remaining, endIndex, comment;
-			startPos = parser.getLinePos();
+			var start, content, remaining, endIndex, comment;
+			start = parser.pos;
 			if ( !parser.matchString( OPEN_COMMENT ) ) {
 				return null;
 			}
@@ -3157,7 +3064,7 @@ exports.unbind = function(el, type, fn, capture){
 				c: content
 			};
 			if ( parser.includeLinePositions ) {
-				comment.p = startPos.toJSON();
+				comment.p = parser.getLinePos( start );
 			}
 			return comment;
 		};
@@ -3190,10 +3097,11 @@ exports.unbind = function(el, type, fn, capture){
 		return lowest || -1;
 	};
 
-	/* parse/converters/utils/decodeCharacterReferences.js */
+	/* shared/decodeCharacterReferences.js */
 	var decodeCharacterReferences = function() {
 
-		var htmlEntities, controlCharacters, namedEntityPattern, hexEntityPattern, decimalEntityPattern;
+		var __export;
+		var htmlEntities, controlCharacters, entityPattern;
 		htmlEntities = {
 			quot: 34,
 			amp: 38,
@@ -3483,27 +3391,23 @@ exports.unbind = function(el, type, fn, capture){
 			382,
 			376
 		];
-		namedEntityPattern = new RegExp( '&(' + Object.keys( htmlEntities ).join( '|' ) + ');?', 'g' );
-		hexEntityPattern = /&#x([0-9]+);?/g;
-		decimalEntityPattern = /&#([0-9]+);?/g;
-		return function decodeCharacterReferences( html ) {
-			var result;
-			// named entities
-			result = html.replace( namedEntityPattern, function( match, name ) {
-				if ( htmlEntities[ name ] ) {
-					return String.fromCharCode( htmlEntities[ name ] );
+		entityPattern = new RegExp( '&(#?(?:x[\\w\\d]+|\\d+|' + Object.keys( htmlEntities ).join( '|' ) + '));?', 'g' );
+		__export = function decodeCharacterReferences( html ) {
+			return html.replace( entityPattern, function( match, entity ) {
+				var code;
+				// Handle named entities
+				if ( entity[ 0 ] !== '#' ) {
+					code = htmlEntities[ entity ];
+				} else if ( entity[ 1 ] === 'x' ) {
+					code = parseInt( entity.substring( 2 ), 16 );
+				} else {
+					code = parseInt( entity.substring( 1 ), 10 );
 				}
-				return match;
+				if ( !code ) {
+					return match;
+				}
+				return String.fromCharCode( validateCode( code ) );
 			} );
-			// hex references
-			result = result.replace( hexEntityPattern, function( match, hex ) {
-				return String.fromCharCode( validateCode( parseInt( hex, 16 ) ) );
-			} );
-			// decimal references
-			result = result.replace( decimalEntityPattern, function( match, charCode ) {
-				return String.fromCharCode( validateCode( charCode ) );
-			} );
-			return result;
 		};
 		// some code points are verboten. If we were inserting HTML, the browser would replace the illegal
 		// code points with alternatives in some cases - since we're bypassing that mechanism, we need
@@ -3541,6 +3445,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return 65533;
 		}
+		return __export;
 	}( legacy );
 
 	/* parse/converters/text.js */
@@ -3554,7 +3459,6 @@ exports.unbind = function(el, type, fn, capture){
 				index = remaining.indexOf( barrier );
 			} else {
 				disallowed = [
-					barrier,
 					parser.delimiters[ 0 ],
 					parser.tripleDelimiters[ 0 ],
 					parser.staticDelimiters[ 0 ],
@@ -3563,9 +3467,12 @@ exports.unbind = function(el, type, fn, capture){
 				// http://developers.whatwg.org/syntax.html#syntax-attributes
 				if ( parser.inAttribute === true ) {
 					// we're inside an unquoted attribute value
-					disallowed.push( '"', '\'', '=', '>', '`' );
+					disallowed.push( '"', '\'', '=', '<', '>', '`' );
 				} else if ( parser.inAttribute ) {
+					// quoted attribute value
 					disallowed.push( parser.inAttribute );
+				} else {
+					disallowed.push( barrier );
 				}
 				index = getLowestIndex( remaining, disallowed );
 			}
@@ -3576,7 +3483,7 @@ exports.unbind = function(el, type, fn, capture){
 				index = remaining.length;
 			}
 			parser.pos += index;
-			return decodeCharacterReferences( remaining.substr( 0, index ) );
+			return parser.inside ? remaining.substr( 0, index ) : decodeCharacterReferences( remaining.substr( 0, index ) );
 		};
 	}( getLowestIndex, decodeCharacterReferences );
 
@@ -3603,11 +3510,12 @@ exports.unbind = function(el, type, fn, capture){
 	}( types );
 
 	/* parse/converters/element/attribute.js */
-	var attribute = function( getLowestIndex, getMustache ) {
+	var attribute = function( getLowestIndex, getMustache, decodeCharacterReferences ) {
 
+		var __export;
 		var attributeNamePattern = /^[^\s"'>\/=]+/,
 			unquotedAttributeValueTextPattern = /^[^\s"'=<>`]+/;
-		return getAttribute;
+		__export = getAttribute;
 
 		function getAttribute( parser ) {
 			var attr, name, value;
@@ -3646,20 +3554,30 @@ exports.unbind = function(el, type, fn, capture){
 				parser.pos = start;
 				return null;
 			}
+			if ( !value.length ) {
+				return null;
+			}
 			if ( value.length === 1 && typeof value[ 0 ] === 'string' ) {
-				return value[ 0 ];
+				return decodeCharacterReferences( value[ 0 ] );
 			}
 			return value;
 		}
 
 		function getUnquotedAttributeValueToken( parser ) {
-			var start, text, index;
+			var start, text, haystack, needles, index;
 			start = parser.pos;
 			text = parser.matchPattern( unquotedAttributeValueTextPattern );
 			if ( !text ) {
 				return null;
 			}
-			if ( ( index = text.indexOf( parser.delimiters[ 0 ] ) ) !== -1 ) {
+			haystack = text;
+			needles = [
+				parser.delimiters[ 0 ],
+				parser.tripleDelimiters[ 0 ],
+				parser.staticDelimiters[ 0 ],
+				parser.staticTripleDelimiters[ 0 ]
+			];
+			if ( ( index = getLowestIndex( haystack, needles ) ) !== -1 ) {
 				text = text.substr( 0, index );
 				parser.pos = start + text.length;
 			}
@@ -3704,14 +3622,17 @@ exports.unbind = function(el, type, fn, capture){
 		}
 
 		function getQuotedStringToken( parser, quoteMark ) {
-			var start, index, remaining;
+			var start, index, haystack, needles;
 			start = parser.pos;
-			remaining = parser.remaining();
-			index = getLowestIndex( remaining, [
+			haystack = parser.remaining();
+			needles = [
 				quoteMark,
 				parser.delimiters[ 0 ],
-				parser.delimiters[ 1 ]
-			] );
+				parser.tripleDelimiters[ 0 ],
+				parser.staticDelimiters[ 0 ],
+				parser.staticTripleDelimiters[ 0 ]
+			];
+			index = getLowestIndex( haystack, needles );
 			if ( index === -1 ) {
 				parser.error( 'Quoted attribute value must have a closing quote' );
 			}
@@ -3719,18 +3640,14 @@ exports.unbind = function(el, type, fn, capture){
 				return null;
 			}
 			parser.pos += index;
-			return remaining.substr( 0, index );
+			return haystack.substr( 0, index );
 		}
-	}( getLowestIndex, mustache );
+		return __export;
+	}( getLowestIndex, mustache, decodeCharacterReferences );
 
 	/* utils/parseJSON.js */
 	var parseJSON = function( Parser, getStringLiteral, getKey ) {
 
-		// simple JSON parser, without the restrictions of JSON parse
-		// (i.e. having to double-quote keys).
-		//
-		// If passed a hash of values as the second argument, ${placeholders}
-		// will be replaced with those values
 		var JsonParser, specials, specialsPattern, numberPattern, placeholderPattern, placeholderAtStartPattern, onlyWhitespace;
 		specials = {
 			'true': true,
@@ -3746,6 +3663,7 @@ exports.unbind = function(el, type, fn, capture){
 		JsonParser = Parser.extend( {
 			init: function( str, options ) {
 				this.values = options.values;
+				this.allowWhitespace();
 			},
 			postProcess: function( result ) {
 				if ( result.length !== 1 || !onlyWhitespace.test( this.leftover ) ) {
@@ -3884,12 +3802,26 @@ exports.unbind = function(el, type, fn, capture){
 	}( Parser, stringLiteral, key );
 
 	/* parse/converters/element/processDirective.js */
-	var processDirective = function( parseJSON ) {
+	var processDirective = function( Parser, conditional, flattenExpression, parseJSON ) {
 
+		var methodCallPattern = /^([a-zA-Z_$][a-zA-Z_$0-9]*)\(/,
+			ExpressionParser;
+		ExpressionParser = Parser.extend( {
+			converters: [ conditional ]
+		} );
 		// TODO clean this up, it's shocking
 		return function( tokens ) {
-			var result, token, colonIndex, directiveName, directiveArgs, parsed;
+			var result, match, parser, args, token, colonIndex, directiveName, directiveArgs, parsed;
 			if ( typeof tokens === 'string' ) {
+				if ( match = methodCallPattern.exec( tokens ) ) {
+					result = {
+						m: match[ 1 ]
+					};
+					args = '[' + tokens.slice( result.m.length + 1, -1 ) + ']';
+					parser = new ExpressionParser( args );
+					result.a = flattenExpression( parser.result[ 0 ] );
+					return result;
+				}
 				if ( tokens.indexOf( ':' ) === -1 ) {
 					return tokens.trim();
 				}
@@ -3898,31 +3830,35 @@ exports.unbind = function(el, type, fn, capture){
 			result = {};
 			directiveName = [];
 			directiveArgs = [];
-			while ( tokens.length ) {
-				token = tokens.shift();
-				if ( typeof token === 'string' ) {
-					colonIndex = token.indexOf( ':' );
-					if ( colonIndex === -1 ) {
-						directiveName.push( token );
+			if ( tokens ) {
+				while ( tokens.length ) {
+					token = tokens.shift();
+					if ( typeof token === 'string' ) {
+						colonIndex = token.indexOf( ':' );
+						if ( colonIndex === -1 ) {
+							directiveName.push( token );
+						} else {
+							// is the colon the first character?
+							if ( colonIndex ) {
+								// no
+								directiveName.push( token.substr( 0, colonIndex ) );
+							}
+							// if there is anything after the colon in this token, treat
+							// it as the first token of the directiveArgs fragment
+							if ( token.length > colonIndex + 1 ) {
+								directiveArgs[ 0 ] = token.substring( colonIndex + 1 );
+							}
+							break;
+						}
 					} else {
-						// is the colon the first character?
-						if ( colonIndex ) {
-							// no
-							directiveName.push( token.substr( 0, colonIndex ) );
-						}
-						// if there is anything after the colon in this token, treat
-						// it as the first token of the directiveArgs fragment
-						if ( token.length > colonIndex + 1 ) {
-							directiveArgs[ 0 ] = token.substring( colonIndex + 1 );
-						}
-						break;
+						directiveName.push( token );
 					}
-				} else {
-					directiveName.push( token );
 				}
+				directiveArgs = directiveArgs.concat( tokens );
 			}
-			directiveArgs = directiveArgs.concat( tokens );
-			if ( directiveArgs.length || typeof directiveName !== 'string' ) {
+			if ( !directiveName.length ) {
+				result = '';
+			} else if ( directiveArgs.length || typeof directiveName !== 'string' ) {
 				result = {
 					// TODO is this really necessary? just use the array
 					n: directiveName.length === 1 && typeof directiveName[ 0 ] === 'string' ? directiveName[ 0 ] : directiveName
@@ -3938,16 +3874,17 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return result;
 		};
-	}( parseJSON );
+	}( Parser, conditional, flattenExpression, parseJSON );
 
 	/* parse/converters/element.js */
 	var element = function( types, voidElementNames, getMustache, getComment, getText, getClosingTag, getAttribute, processDirective ) {
 
+		var __export;
 		var tagNamePattern = /^[a-zA-Z]{1,}:?[a-zA-Z0-9\-]*/,
 			validTagNameFollower = /^[\s\n\/>]/,
 			onPattern = /^on/,
-			proxyEventPattern = /^on-([a-zA-Z$_][a-zA-Z$_0-9\-]+)$/,
-			reservedEventNames = /^(?:change|reset|teardown|update)$/,
+			proxyEventPattern = /^on-([a-zA-Z\\*\\.$_][a-zA-Z\\*\\.$_0-9\-]+)$/,
+			reservedEventNames = /^(?:change|reset|teardown|update|construct|config|init|render|unrender|detach|insert)$/,
 			directives = {
 				'intro-outro': 't0',
 				intro: 't1',
@@ -3957,7 +3894,7 @@ exports.unbind = function(el, type, fn, capture){
 			exclude = {
 				exclude: true
 			},
-			converters;
+			converters, disallowedContents;
 		// Different set of converters, because this time we're looking for closing tags
 		converters = [
 			getMustache,
@@ -3966,13 +3903,61 @@ exports.unbind = function(el, type, fn, capture){
 			getText,
 			getClosingTag
 		];
-		return getElement;
+		// based on http://developers.whatwg.org/syntax.html#syntax-tag-omission
+		disallowedContents = {
+			li: [ 'li' ],
+			dt: [
+				'dt',
+				'dd'
+			],
+			dd: [
+				'dt',
+				'dd'
+			],
+			p: 'address article aside blockquote div dl fieldset footer form h1 h2 h3 h4 h5 h6 header hgroup hr main menu nav ol p pre section table ul'.split( ' ' ),
+			rt: [
+				'rt',
+				'rp'
+			],
+			rp: [
+				'rt',
+				'rp'
+			],
+			optgroup: [ 'optgroup' ],
+			option: [
+				'option',
+				'optgroup'
+			],
+			thead: [
+				'tbody',
+				'tfoot'
+			],
+			tbody: [
+				'tbody',
+				'tfoot'
+			],
+			tfoot: [ 'tbody' ],
+			tr: [
+				'tr',
+				'tbody'
+			],
+			td: [
+				'td',
+				'th',
+				'tr'
+			],
+			th: [
+				'td',
+				'th',
+				'tr'
+			]
+		};
+		__export = getElement;
 
 		function getElement( parser ) {
-			var start, startPos, element, lowerCaseName, directiveName, match, addProxyEvent, attribute, directive, selfClosing, children, child;
+			var start, element, lowerCaseName, directiveName, match, addProxyEvent, attribute, directive, selfClosing, children, child;
 			start = parser.pos;
-			startPos = parser.getLinePos();
-			if ( parser.inside ) {
+			if ( parser.inside || parser.inAttribute ) {
 				return null;
 			}
 			if ( !parser.matchString( '<' ) ) {
@@ -3986,7 +3971,7 @@ exports.unbind = function(el, type, fn, capture){
 				t: types.ELEMENT
 			};
 			if ( parser.includeLinePositions ) {
-				element.p = startPos.toJSON();
+				element.p = parser.getLinePos( start );
 			}
 			if ( parser.matchString( '!' ) ) {
 				element.y = 1;
@@ -4004,27 +3989,36 @@ exports.unbind = function(el, type, fn, capture){
 				var directiveName = directive.n || directive;
 				if ( reservedEventNames.test( directiveName ) ) {
 					parser.pos -= directiveName.length;
-					parser.error( 'Cannot use reserved event names (change, reset, teardown, update)' );
+					parser.error( 'Cannot use reserved event names (change, reset, teardown, update, construct, config, init, render, unrender, detach, insert)' );
 				}
 				element.v[ name ] = directive;
 			};
+			parser.allowWhitespace();
 			// directives and attributes
-			while ( attribute = getAttribute( parser ) ) {
-				// intro, outro, decorator
-				if ( directiveName = directives[ attribute.name ] ) {
-					element[ directiveName ] = processDirective( attribute.value );
-				} else if ( match = proxyEventPattern.exec( attribute.name ) ) {
-					if ( !element.v )
-						element.v = {};
-					directive = processDirective( attribute.value );
-					addProxyEvent( match[ 1 ], directive );
-				} else {
-					if ( !parser.sanitizeEventAttributes || !onPattern.test( attribute.name ) ) {
-						if ( !element.a )
-							element.a = {};
-						element.a[ attribute.name ] = attribute.value || 0;
+			while ( attribute = getMustache( parser ) || getAttribute( parser ) ) {
+				// regular attributes
+				if ( attribute.name ) {
+					// intro, outro, decorator
+					if ( directiveName = directives[ attribute.name ] ) {
+						element[ directiveName ] = processDirective( attribute.value );
+					} else if ( match = proxyEventPattern.exec( attribute.name ) ) {
+						if ( !element.v )
+							element.v = {};
+						directive = processDirective( attribute.value );
+						addProxyEvent( match[ 1 ], directive );
+					} else {
+						if ( !parser.sanitizeEventAttributes || !onPattern.test( attribute.name ) ) {
+							if ( !element.a )
+								element.a = {};
+							element.a[ attribute.name ] = attribute.value || 0;
+						}
 					}
+				} else {
+					if ( !element.m )
+						element.m = [];
+					element.m.push( attribute );
 				}
+				parser.allowWhitespace();
 			}
 			// allow whitespace before closing solidus
 			parser.allowWhitespace();
@@ -4044,7 +4038,7 @@ exports.unbind = function(el, type, fn, capture){
 					parser.inside = lowerCaseName;
 				}
 				children = [];
-				while ( child = parser.read( converters ) ) {
+				while ( canContain( lowerCaseName, parser.remaining() ) && ( child = parser.read( converters ) ) ) {
 					// Special case - closing section tag
 					if ( child.t === types.CLOSING ) {
 						break;
@@ -4064,6 +4058,17 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return element;
 		}
+
+		function canContain( name, remaining ) {
+			var match, disallowed;
+			match = /^<([a-zA-Z][a-zA-Z0-9]*)/.exec( remaining );
+			disallowed = disallowedContents[ name ];
+			if ( !match || !disallowed ) {
+				return true;
+			}
+			return !~disallowed.indexOf( match[ 1 ].toLowerCase() );
+		}
+		return __export;
 	}( types, voidElementNames, mustache, comment, text, closingTag, attribute, processDirective );
 
 	/* parse/utils/trimWhitespace.js */
@@ -4101,9 +4106,10 @@ exports.unbind = function(el, type, fn, capture){
 	/* parse/utils/stripStandalones.js */
 	var stripStandalones = function( types ) {
 
+		var __export;
 		var leadingLinebreak = /^\s*\r?\n/,
 			trailingLinebreak = /\r?\n\s*$/;
-		return function( items ) {
+		__export = function( items ) {
 			var i, current, backOne, backTwo, lastSectionItem;
 			for ( i = 1; i < items.length; i += 1 ) {
 				current = items[ i ];
@@ -4151,65 +4157,30 @@ exports.unbind = function(el, type, fn, capture){
 		function isSection( item ) {
 			return ( item.t === types.SECTION || item.t === types.INVERTED ) && item.f;
 		}
+		return __export;
 	}( types );
 
-	/* parse/_parse.js */
-	var parse = function( types, Parser, mustache, comment, element, text, trimWhitespace, stripStandalones ) {
+	/* utils/escapeRegExp.js */
+	var escapeRegExp = function() {
 
-		// Ractive.parse
-		// ===============
-		//
-		// Takes in a string, and returns an object representing the parsed template.
-		// A parsed template is an array of 1 or more 'templates', which in some
-		// cases have children.
-		//
-		// The format is optimised for size, not readability, however for reference the
-		// keys for each template are as follows:
-		//
-		// * r - Reference, e.g. 'mustache' in {{mustache}}
-		// * t - Type code (e.g. 1 is text, 2 is interpolator...)
-		// * f - Fragment. Contains a template's children
-		// * l - eLse fragment. Contains a template's children in the else case
-		// * e - Element name
-		// * a - map of element Attributes, or proxy event/transition Arguments
-		// * d - Dynamic proxy event/transition arguments
-		// * n - indicates an iNverted section
-		// * i - Index reference, e.g. 'num' in {{#section:num}}content{{/section}}
-		// * v - eVent proxies (i.e. when user e.g. clicks on a node, fire proxy event)
-		// * x - eXpressions
-		// * s - String representation of an expression function
-		// * t0 - intro/outro Transition
-		// * t1 - intro Transition
-		// * t2 - outro Transition
-		// * o - decOrator
-		// * y - is doctYpe
-		// * c - is Content (e.g. of a comment node)
-		// * p - line Position information - array with line number and character position of each node
+		var pattern = /[-/\\^$*+?.()|[\]{}]/g;
+		return function escapeRegExp( str ) {
+			return str.replace( pattern, '\\$&' );
+		};
+	}();
+
+	/* parse/_parse.js */
+	var parse = function( types, Parser, mustache, comment, element, text, trimWhitespace, stripStandalones, escapeRegExp ) {
+
+		var __export;
 		var StandardParser, parse, contiguousWhitespace = /[ \t\f\r\n]+/g,
-			inlinePartialStart = /<!--\s*\{\{\s*>\s*([a-zA-Z_$][a-zA-Z_$0-9]*)\s*}\}\s*-->/,
-			inlinePartialEnd = /<!--\s*\{\{\s*\/\s*([a-zA-Z_$][a-zA-Z_$0-9]*)\s*}\}\s*-->/,
 			preserveWhitespaceElements = /^(?:pre|script|style|textarea)$/i,
 			leadingWhitespace = /^\s+/,
 			trailingWhitespace = /\s+$/;
 		StandardParser = Parser.extend( {
 			init: function( str, options ) {
 				// config
-				this.delimiters = options.delimiters || [
-					'{{',
-					'}}'
-				];
-				this.tripleDelimiters = options.tripleDelimiters || [
-					'{{{',
-					'}}}'
-				];
-				this.staticDelimiters = options.staticDelimiters || [
-					'[[',
-					']]'
-				];
-				this.staticTripleDelimiters = options.staticTripleDelimiters || [
-					'[[[',
-					']]]'
-				];
+				setDelimiters( options, this );
 				this.sectionDepth = 0;
 				this.interpolate = {
 					script: !options.interpolate || options.interpolate.script !== false,
@@ -4244,7 +4215,10 @@ exports.unbind = function(el, type, fn, capture){
 			var options = arguments[ 1 ];
 			if ( options === void 0 )
 				options = {};
-			var result, remaining, partials, name, startMatch, endMatch;
+			var result, remaining, partials, name, startMatch, endMatch, inlinePartialStart, inlinePartialEnd;
+			setDelimiters( options );
+			inlinePartialStart = new RegExp( '<!--\\s*' + escapeRegExp( options.delimiters[ 0 ] ) + '\\s*>\\s*([a-zA-Z_$][a-zA-Z_$0-9]*)\\s*' + escapeRegExp( options.delimiters[ 1 ] ) + '\\s*-->' );
+			inlinePartialEnd = new RegExp( '<!--\\s*' + escapeRegExp( options.delimiters[ 0 ] ) + '\\s*\\/\\s*([a-zA-Z_$][a-zA-Z_$0-9]*)\\s*' + escapeRegExp( options.delimiters[ 1 ] ) + '\\s*-->' );
 			result = {
 				v: 1
 			};
@@ -4257,17 +4231,18 @@ exports.unbind = function(el, type, fn, capture){
 					remaining = remaining.substring( startMatch.index + startMatch[ 0 ].length );
 					endMatch = inlinePartialEnd.exec( remaining );
 					if ( !endMatch || endMatch[ 1 ] !== name ) {
-						throw new Error( 'Inline partials must have a closing delimiter, and cannot be nested' );
+						throw new Error( 'Inline partials must have a closing delimiter, and cannot be nested. Expected closing for "' + name + '", but ' + ( endMatch ? 'instead found "' + endMatch[ 1 ] + '"' : ' no closing found' ) );
 					}
 					( partials || ( partials = {} ) )[ name ] = new StandardParser( remaining.substr( 0, endMatch.index ), options ).result;
 					remaining = remaining.substring( endMatch.index + endMatch[ 0 ].length );
 				}
+				template += remaining;
 				result.p = partials;
 			}
 			result.t = new StandardParser( template, options ).result;
 			return result;
 		};
-		return parse;
+		__export = parse;
 
 		function cleanup( items, stripComments, preserveWhitespace, removeLeadingWhitespace, removeTrailingWhitespace, rewriteElse ) {
 			var i, item, previousItem, nextItem, preserveWhitespaceInsideFragment, removeLeadingWhitespaceInsideFragment, removeTrailingWhitespaceInsideFragment, unlessBlock, key;
@@ -4305,35 +4280,35 @@ exports.unbind = function(el, type, fn, capture){
 						}
 					}
 					cleanup( item.f, stripComments, preserveWhitespaceInsideFragment, removeLeadingWhitespaceInsideFragment, removeTrailingWhitespaceInsideFragment, rewriteElse );
-					// Split if-else blocks into two (an if, and an unless)
-					if ( item.l ) {
-						cleanup( item.l, stripComments, preserveWhitespace, removeLeadingWhitespaceInsideFragment, removeTrailingWhitespaceInsideFragment, rewriteElse );
-						if ( rewriteElse ) {
-							unlessBlock = {
-								t: 4,
-								n: types.SECTION_UNLESS,
-								f: item.l
-							};
-							// copy the conditional based on its type
-							if ( item.r ) {
-								unlessBlock.r = item.r;
-							}
-							if ( item.x ) {
-								unlessBlock.x = item.x;
-							}
-							if ( item.rx ) {
-								unlessBlock.rx = item.rx;
-							}
-							items.splice( i + 1, 0, unlessBlock );
-							delete item.l;
+				}
+				// Split if-else blocks into two (an if, and an unless)
+				if ( item.l ) {
+					cleanup( item.l, stripComments, preserveWhitespace, removeLeadingWhitespaceInsideFragment, removeTrailingWhitespaceInsideFragment, rewriteElse );
+					if ( rewriteElse ) {
+						unlessBlock = {
+							t: 4,
+							n: types.SECTION_UNLESS,
+							f: item.l
+						};
+						// copy the conditional based on its type
+						if ( item.r ) {
+							unlessBlock.r = item.r;
 						}
+						if ( item.x ) {
+							unlessBlock.x = item.x;
+						}
+						if ( item.rx ) {
+							unlessBlock.rx = item.rx;
+						}
+						items.splice( i + 1, 0, unlessBlock );
+						delete item.l;
 					}
 				}
 				// Clean up element attributes
 				if ( item.a ) {
 					for ( key in item.a ) {
 						if ( item.a.hasOwnProperty( key ) && typeof item.a[ key ] !== 'string' ) {
-							cleanup( item.a[ key ], stripComments, preserveWhitespace, rewriteElse );
+							cleanup( item.a[ key ], stripComments, preserveWhitespace, removeLeadingWhitespaceInsideFragment, removeTrailingWhitespaceInsideFragment, rewriteElse );
 						}
 					}
 				}
@@ -4355,7 +4330,30 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			}
 		}
-	}( types, Parser, mustache, comment, element, text, trimWhitespace, stripStandalones );
+
+		function setDelimiters( source ) {
+			var target = arguments[ 1 ];
+			if ( target === void 0 )
+				target = source;
+			target.delimiters = source.delimiters || [
+				'{{',
+				'}}'
+			];
+			target.tripleDelimiters = source.tripleDelimiters || [
+				'{{{',
+				'}}}'
+			];
+			target.staticDelimiters = source.staticDelimiters || [
+				'[[',
+				']]'
+			];
+			target.staticTripleDelimiters = source.staticTripleDelimiters || [
+				'[[[',
+				']]]'
+			];
+		}
+		return __export;
+	}( types, Parser, mustache, comment, element, text, trimWhitespace, stripStandalones, escapeRegExp );
 
 	/* config/options/groups/optionGroup.js */
 	var optionGroup = function() {
@@ -4378,7 +4376,8 @@ exports.unbind = function(el, type, fn, capture){
 			'sanitize',
 			'stripComments',
 			'delimiters',
-			'tripleDelimiters'
+			'tripleDelimiters',
+			'interpolate'
 		];
 		parseOptions = optionGroup( keys, function( key ) {
 			return key;
@@ -4430,18 +4429,17 @@ exports.unbind = function(el, type, fn, capture){
 				}
 				throw new Error( 'Could not find template element with id #' + id );
 			}
-			// Do we want to turn this on?
-			/*
-            	if ( template.tagName.toUpperCase() !== 'SCRIPT' )) {
-            		if ( options && options.noThrow ) { return; }
-            		throw new Error( 'Template element with id #' + id + ', must be a <script> element' );
-            	}
-            	*/
+			if ( template.tagName.toUpperCase() !== 'SCRIPT' ) {
+				if ( options && options.noThrow ) {
+					return;
+				}
+				throw new Error( 'Template element with id #' + id + ', must be a <script> element' );
+			}
 			return template.innerHTML;
 		}
 
 		function isHashedId( id ) {
-			return id.charAt( 0 ) === '#';
+			return id && id.charAt( 0 ) === '#';
 		}
 
 		function isParsed( template ) {
@@ -4665,7 +4663,8 @@ exports.unbind = function(el, type, fn, capture){
 	/* utils/wrapPrototypeMethod.js */
 	var wrapPrototypeMethod = function( noop ) {
 
-		return function wrap( parent, name, method ) {
+		var __export;
+		__export = function wrap( parent, name, method ) {
 			if ( !/_super/.test( method ) ) {
 				return method;
 			}
@@ -4704,6 +4703,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return method;
 		}
+		return __export;
 	}( noop );
 
 	/* config/deprecate.js */
@@ -4737,15 +4737,27 @@ exports.unbind = function(el, type, fn, capture){
 			}
 		}
 		return function deprecateOptions( options ) {
+			deprecate( options, 'beforeInit', 'onconstruct' );
+			deprecate( options, 'init', 'onrender' );
+			deprecate( options, 'complete', 'oncomplete' );
 			deprecateEventDefinitions( options );
 			deprecateAdaptors( options );
 		};
 	}( warn, isArray );
 
 	/* config/config.js */
-	var config = function( css, data, defaults, template, parseOptions, registries, wrap, deprecate ) {
+	var config = function( css, data, defaults, template, parseOptions, registries, wrapPrototype, deprecate ) {
 
-		var custom, options, config;
+		var custom, options, config, blacklisted;
+		// would be nice to not have these here,
+		// they get added during initialise, so for now we have
+		// to make sure not to try and extend them.
+		// Possibly, we could re-order and not add till later
+		// in process.
+		blacklisted = {
+			'_parent': true,
+			'_component': true
+		};
 		custom = {
 			data: data,
 			template: template,
@@ -4763,6 +4775,10 @@ exports.unbind = function(el, type, fn, capture){
 		config.keys = Object.keys( defaults ).concat( registries.map( function( r ) {
 			return r.name;
 		} ) ).concat( [ 'css' ] );
+		// add these to blacklisted key's that we don't double extend
+		config.keys.forEach( function( key ) {
+			return blacklisted[ key ] = true;
+		} );
 		config.parseOptions = parseOptions;
 		config.registries = registries;
 
@@ -4774,10 +4790,11 @@ exports.unbind = function(el, type, fn, capture){
 		};
 		config.init = function( Parent, ractive, options ) {
 			configure( 'init', Parent, ractive, options );
-			if ( ractive._config ) {
-				ractive._config.options = options;
-			}
 		};
+
+		function isStandardDefaultKey( key ) {
+			return key in defaults && !( key in config.parseOptions ) && !( key in custom );
+		}
 
 		function configure( method, Parent, instance, options ) {
 			deprecate( options );
@@ -4788,9 +4805,9 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			} );
 			for ( var key in options ) {
-				if ( key in defaults && !( key in config.parseOptions ) && !( key in custom ) ) {
+				if ( isStandardDefaultKey( key ) ) {
 					var value = options[ key ];
-					instance[ key ] = typeof value === 'function' ? wrap( Parent.prototype, key, value ) : value;
+					instance[ key ] = typeof value === 'function' ? wrapPrototype( Parent.prototype, key, value ) : value;
 				}
 			}
 			config.registries.forEach( function( registry ) {
@@ -4798,6 +4815,20 @@ exports.unbind = function(el, type, fn, capture){
 			} );
 			customConfig( method, 'template', Parent, instance, options );
 			customConfig( method, 'css', Parent, instance, options );
+			extendOtherMethods( Parent.prototype, instance, options );
+		}
+
+		function extendOtherMethods( parent, instance, options ) {
+			for ( var key in options ) {
+				if ( !( key in blacklisted ) && options.hasOwnProperty( key ) ) {
+					var member = options[ key ];
+					// if this is a method that overwrites a method, wrap it:
+					if ( typeof member === 'function' ) {
+						member = wrapPrototype( parent, key, member );
+					}
+					instance[ key ] = member;
+				}
+			}
 		}
 		config.reset = function( ractive ) {
 			return config.filter( function( c ) {
@@ -4806,12 +4837,24 @@ exports.unbind = function(el, type, fn, capture){
 				return c.name;
 			} );
 		};
+		config.getConstructTarget = function( ractive, options ) {
+			if ( options.onconstruct ) {
+				// pretend this object literal is the ractive instance
+				return {
+					onconstruct: wrapPrototype( ractive, 'onconstruct', options.onconstruct ).bind( ractive ),
+					fire: ractive.fire.bind( ractive )
+				};
+			} else {
+				return ractive;
+			}
+		};
 		return config;
 	}( css, data, options, template, parseOptions, registries, wrapPrototypeMethod, deprecate );
 
 	/* shared/interpolate.js */
 	var interpolate = function( circular, warn, interpolators, config ) {
 
+		var __export;
 		var interpolate = function( from, to, ractive, type ) {
 			if ( from === to ) {
 				return snap( to );
@@ -4823,16 +4866,17 @@ exports.unbind = function(el, type, fn, capture){
 				}
 				warn( 'Missing "' + type + '" interpolator. You may need to download a plugin from [TODO]' );
 			}
-			return interpolators.number( from, to ) || interpolators.array( from, to ) || interpolators.object( from, to ) || interpolators.cssLength( from, to ) || snap( to );
+			return interpolators.number( from, to ) || interpolators.array( from, to ) || interpolators.object( from, to ) || snap( to );
 		};
 		circular.interpolate = interpolate;
-		return interpolate;
+		__export = interpolate;
 
 		function snap( to ) {
 			return function() {
 				return to;
 			};
 		}
+		return __export;
 	}( circular, warn, interpolators, config );
 
 	/* Ractive/prototype/animate/Animation.js */
@@ -4849,6 +4893,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			this.interpolator = interpolate( this.from, this.to, this.root, this.interpolator );
 			this.running = true;
+			this.tick();
 		};
 		Animation.prototype = {
 			tick: function() {
@@ -4907,11 +4952,12 @@ exports.unbind = function(el, type, fn, capture){
 	/* Ractive/prototype/animate.js */
 	var Ractive$animate = function( isEqual, Promise, normaliseKeypath, animations, Animation ) {
 
+		var __export;
 		var noop = function() {},
 			noAnimation = {
 				stop: noop
 			};
-		return function Ractive$animate( keypath, to, options ) {
+		__export = function Ractive$animate( keypath, to, options ) {
 			var promise, fulfilPromise, k, animation, animations, easing, duration, step, complete, makeValueCollector, currentValues, collectValue, dummy, dummyOptions;
 			promise = new Promise( function( fulfil ) {
 				fulfilPromise = fulfil;
@@ -4953,36 +4999,35 @@ exports.unbind = function(el, type, fn, capture){
 						animations.push( animate( this, k, keypath[ k ], options ) );
 					}
 				}
-				if ( step || complete ) {
-					dummyOptions = {
-						easing: easing,
-						duration: duration
+				// Create a dummy animation, to facilitate step/complete
+				// callbacks, and Promise fulfilment
+				dummyOptions = {
+					easing: easing,
+					duration: duration
+				};
+				if ( step ) {
+					dummyOptions.step = function( t ) {
+						step( t, currentValues );
 					};
-					if ( step ) {
-						dummyOptions.step = function( t ) {
-							step( t, currentValues );
-						};
-					}
-					if ( complete ) {
-						promise.then( function( t ) {
-							complete( t, currentValues );
-						} );
-					}
-					dummyOptions.complete = fulfilPromise;
-					dummy = animate( this, null, null, dummyOptions );
-					animations.push( dummy );
 				}
-				return {
-					stop: function() {
-						var animation;
-						while ( animation = animations.pop() ) {
-							animation.stop();
-						}
-						if ( dummy ) {
-							dummy.stop();
-						}
+				if ( complete ) {
+					promise.then( function( t ) {
+						complete( t, currentValues );
+					} );
+				}
+				dummyOptions.complete = fulfilPromise;
+				dummy = animate( this, null, null, dummyOptions );
+				animations.push( dummy );
+				promise.stop = function() {
+					var animation;
+					while ( animation = animations.pop() ) {
+						animation.stop();
+					}
+					if ( dummy ) {
+						dummy.stop();
 					}
 				};
+				return promise;
 			}
 			// animate a single keypath
 			options = options || {};
@@ -5045,18 +5090,25 @@ exports.unbind = function(el, type, fn, capture){
 			root._animations.push( animation );
 			return animation;
 		}
+		return __export;
 	}( isEqual, Promise, normaliseKeypath, animations, Ractive$animate_Animation );
 
 	/* Ractive/prototype/detach.js */
-	var Ractive$detach = function( removeFromArray ) {
+	var Ractive$detach = function( Hook, removeFromArray ) {
 
+		var detachHook = new Hook( 'detach' );
 		return function Ractive$detach() {
+			if ( this.detached ) {
+				return this.detached;
+			}
 			if ( this.el ) {
 				removeFromArray( this.el.__ractive_instances__, this );
 			}
-			return this.fragment.detach();
+			this.detached = this.fragment.detach();
+			detachHook.fire( this );
+			return this.detached;
 		};
-	}( removeFromArray );
+	}( Ractive$shared_hooks_Hook, removeFromArray );
 
 	/* Ractive/prototype/find.js */
 	var Ractive$find = function Ractive$find( selector ) {
@@ -5155,7 +5207,8 @@ exports.unbind = function(el, type, fn, capture){
 	/* Ractive/prototype/shared/makeQuery/sortByItemPosition.js */
 	var Ractive$shared_makeQuery_sortByItemPosition = function() {
 
-		return function( a, b ) {
+		var __export;
+		__export = function( a, b ) {
 			var ancestryA, ancestryB, oldestA, oldestB, mutualAncestor, indexA, indexB, fragments, fragmentA, fragmentB;
 			ancestryA = getAncestry( a.component || a._ractive.proxy );
 			ancestryB = getAncestry( b.component || b._ractive.proxy );
@@ -5213,6 +5266,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return ancestry;
 		}
+		return __export;
 	}();
 
 	/* Ractive/prototype/shared/makeQuery/sortByDocumentPosition.js */
@@ -5368,30 +5422,174 @@ exports.unbind = function(el, type, fn, capture){
 		return this.fragment.findComponent( selector );
 	};
 
+	/* utils/getPotentialWildcardMatches.js */
+	var getPotentialWildcardMatches = function() {
+
+		var __export;
+		var starMaps = {};
+		// This function takes a keypath such as 'foo.bar.baz', and returns
+		// all the variants of that keypath that include a wildcard in place
+		// of a key, such as 'foo.bar.*', 'foo.*.baz', 'foo.*.*' and so on.
+		// These are then checked against the dependants map (ractive.viewmodel.depsMap)
+		// to see if any pattern observers are downstream of one or more of
+		// these wildcard keypaths (e.g. 'foo.bar.*.status')
+		__export = function getPotentialWildcardMatches( keypath ) {
+			var keys, starMap, mapper, i, result, wildcardKeypath;
+			keys = keypath.split( '.' );
+			if ( !( starMap = starMaps[ keys.length ] ) ) {
+				starMap = getStarMap( keys.length );
+			}
+			result = [];
+			mapper = function( star, i ) {
+				return star ? '*' : keys[ i ];
+			};
+			i = starMap.length;
+			while ( i-- ) {
+				wildcardKeypath = starMap[ i ].map( mapper ).join( '.' );
+				if ( !result.hasOwnProperty( wildcardKeypath ) ) {
+					result.push( wildcardKeypath );
+					result[ wildcardKeypath ] = true;
+				}
+			}
+			return result;
+		};
+		// This function returns all the possible true/false combinations for
+		// a given number - e.g. for two, the possible combinations are
+		// [ true, true ], [ true, false ], [ false, true ], [ false, false ].
+		// It does so by getting all the binary values between 0 and e.g. 11
+		function getStarMap( num ) {
+			var ones = '',
+				max, binary, starMap, mapper, i;
+			if ( !starMaps[ num ] ) {
+				starMap = [];
+				while ( ones.length < num ) {
+					ones += 1;
+				}
+				max = parseInt( ones, 2 );
+				mapper = function( digit ) {
+					return digit === '1';
+				};
+				for ( i = 0; i <= max; i += 1 ) {
+					binary = i.toString( 2 );
+					while ( binary.length < num ) {
+						binary = '0' + binary;
+					}
+					starMap[ i ] = Array.prototype.map.call( binary, mapper );
+				}
+				starMaps[ num ] = starMap;
+			}
+			return starMaps[ num ];
+		}
+		return __export;
+	}();
+
+	/* Ractive/prototype/shared/fireEvent.js */
+	var Ractive$shared_fireEvent = function( getPotentialWildcardMatches ) {
+
+		var __export;
+		__export = function fireEvent( ractive, eventName ) {
+			var options = arguments[ 2 ];
+			if ( options === void 0 )
+				options = {};
+			if ( !eventName ) {
+				return;
+			}
+			if ( !options.event ) {
+				options.event = {
+					name: eventName,
+					context: ractive.data,
+					keypath: '',
+					// until event not included as argument default
+					_noArg: true
+				};
+			} else {
+				options.event.name = eventName;
+			}
+			var eventNames = getPotentialWildcardMatches( eventName );
+			fireEventAs( ractive, eventNames, options.event, options.args, true );
+		};
+
+		function fireEventAs( ractive, eventNames, event, args ) {
+			var initialFire = arguments[ 4 ];
+			if ( initialFire === void 0 )
+				initialFire = false;
+			var subscribers, i, bubble = true;
+			if ( event ) {
+				ractive.event = event;
+			}
+			for ( i = eventNames.length; i >= 0; i-- ) {
+				subscribers = ractive._subs[ eventNames[ i ] ];
+				if ( subscribers ) {
+					bubble = notifySubscribers( ractive, subscribers, event, args ) && bubble;
+				}
+			}
+			if ( event ) {
+				delete ractive.event;
+			}
+			if ( ractive._parent && bubble ) {
+				if ( initialFire && ractive.component ) {
+					var fullName = ractive.component.name + '.' + eventNames[ eventNames.length - 1 ];
+					eventNames = getPotentialWildcardMatches( fullName );
+					if ( event ) {
+						event.component = ractive;
+					}
+				}
+				fireEventAs( ractive._parent, eventNames, event, args );
+			}
+		}
+
+		function notifySubscribers( ractive, subscribers, event, args ) {
+			var originalEvent = null,
+				stopEvent = false;
+			if ( event && !event._noArg ) {
+				args = [ event ].concat( args );
+			}
+			for ( var i = 0, len = subscribers.length; i < len; i += 1 ) {
+				if ( subscribers[ i ].apply( ractive, args ) === false ) {
+					stopEvent = true;
+				}
+			}
+			if ( event && !event._noArg && stopEvent && ( originalEvent = event.original ) ) {
+				originalEvent.preventDefault && originalEvent.preventDefault();
+				originalEvent.stopPropagation && originalEvent.stopPropagation();
+			}
+			return !stopEvent;
+		}
+		return __export;
+	}( getPotentialWildcardMatches );
+
 	/* Ractive/prototype/fire.js */
-	var Ractive$fire = function Ractive$fire( eventName ) {
-		var args, i, len, subscribers = this._subs[ eventName ];
-		if ( !subscribers ) {
-			return;
-		}
-		args = Array.prototype.slice.call( arguments, 1 );
-		for ( i = 0, len = subscribers.length; i < len; i += 1 ) {
-			subscribers[ i ].apply( this, args );
-		}
-	};
+	var Ractive$fire = function( fireEvent ) {
+
+		return function Ractive$fire( eventName ) {
+			var options = {
+				args: Array.prototype.slice.call( arguments, 1 )
+			};
+			fireEvent( this, eventName, options );
+		};
+	}( Ractive$shared_fireEvent );
 
 	/* Ractive/prototype/get.js */
-	var Ractive$get = function( normaliseKeypath ) {
+	var Ractive$get = function( normaliseKeypath, resolveRef ) {
 
 		var options = {
 			capture: true
 		};
 		// top-level calls should be intercepted
 		return function Ractive$get( keypath ) {
+			var value;
 			keypath = normaliseKeypath( keypath );
-			return this.viewmodel.get( keypath, options );
+			value = this.viewmodel.get( keypath, options );
+			// Create inter-component binding, if necessary
+			if ( value === undefined && this._parent && !this.isolated ) {
+				if ( resolveRef( this, keypath, this.fragment ) ) {
+					// creates binding as side-effect, if appropriate
+					value = this.viewmodel.get( keypath );
+				}
+			}
+			return value;
 		};
-	}( normaliseKeypath );
+	}( normaliseKeypath, resolveRef );
 
 	/* utils/getElement.js */
 	var getElement = function getElement( input ) {
@@ -5427,10 +5625,12 @@ exports.unbind = function(el, type, fn, capture){
 	};
 
 	/* Ractive/prototype/insert.js */
-	var Ractive$insert = function( getElement ) {
+	var Ractive$insert = function( Hook, getElement ) {
 
-		return function Ractive$insert( target, anchor ) {
-			if ( !this.rendered ) {
+		var __export;
+		var insertHook = new Hook( 'insert' );
+		__export = function Ractive$insert( target, anchor ) {
+			if ( !this.fragment.rendered ) {
 				// TODO create, and link to, documentation explaining this
 				throw new Error( 'The API has changed - you must call `ractive.render(target[, anchor])` to render your Ractive instance. Once rendered you can use `ractive.insert()`.' );
 			}
@@ -5442,8 +5642,18 @@ exports.unbind = function(el, type, fn, capture){
 			target.insertBefore( this.detach(), anchor );
 			this.el = target;
 			( target.__ractive_instances__ || ( target.__ractive_instances__ = [] ) ).push( this );
+			this.detached = null;
+			fireInsertHook( this );
 		};
-	}( getElement );
+
+		function fireInsertHook( ractive ) {
+			insertHook.fire( ractive );
+			ractive.findAllComponents( '*' ).forEach( function( child ) {
+				fireInsertHook( child.instance );
+			} );
+		}
+		return __export;
+	}( Ractive$shared_hooks_Hook, getElement );
 
 	/* Ractive/prototype/merge.js */
 	var Ractive$merge = function( runloop, isArray, normaliseKeypath ) {
@@ -5477,17 +5687,16 @@ exports.unbind = function(el, type, fn, capture){
 			this.keypath = keypath;
 			this.callback = callback;
 			this.defer = options.defer;
-			// Observers are notified before any DOM changes take place (though
-			// they can defer execution until afterwards)
-			this.priority = 0;
 			// default to root as context, but allow it to be overridden
 			this.context = options && options.context ? options.context : ractive;
 		};
 		Observer.prototype = {
 			init: function( immediate ) {
-				this.value = this.root.viewmodel.get( this.keypath );
+				this.value = this.root.get( this.keypath );
 				if ( immediate !== false ) {
 					this.update();
+				} else {
+					this.oldValue = this.value;
 				}
 			},
 			setValue: function( value ) {
@@ -5589,9 +5798,6 @@ exports.unbind = function(el, type, fn, capture){
 			if ( this.defer ) {
 				this.proxies = [];
 			}
-			// Observers are notified before any DOM changes take place (though
-			// they can defer execution until afterwards)
-			this.priority = 'pattern';
 			// default to root as context, but allow it to be overridden
 			this.context = options && options.context ? options.context : ractive;
 		};
@@ -5610,6 +5816,7 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			},
 			update: function( keypath ) {
+				var this$0 = this;
 				var values;
 				if ( wildcard.test( keypath ) ) {
 					values = getPattern( this.root, keypath );
@@ -5626,7 +5833,9 @@ exports.unbind = function(el, type, fn, capture){
 					return;
 				}
 				if ( this.defer && this.ready ) {
-					runloop.addObserver( this.getProxy( keypath ) );
+					runloop.scheduleTask( function() {
+						return this$0.getProxy( keypath ).update();
+					} );
 					return;
 				}
 				this.reallyUpdate( keypath );
@@ -5698,8 +5907,9 @@ exports.unbind = function(el, type, fn, capture){
 						index = ractive.viewmodel.patternObservers.indexOf( observer );
 						ractive.viewmodel.patternObservers.splice( index, 1 );
 						ractive.viewmodel.unregister( keypath, observer, 'patternObservers' );
+					} else {
+						ractive.viewmodel.unregister( keypath, observer, 'observers' );
 					}
-					ractive.viewmodel.unregister( keypath, observer, 'observers' );
 					cancelled = true;
 				}
 			};
@@ -5846,88 +6056,122 @@ exports.unbind = function(el, type, fn, capture){
 		};
 	}( Ractive$shared_trim, Ractive$shared_notEmptyString );
 
-	/* shared/getSpliceEquivalent.js */
-	var getSpliceEquivalent = function( array, methodName, args ) {
-		switch ( methodName ) {
-			case 'splice':
-				return args;
-			case 'sort':
-			case 'reverse':
-				return null;
-			case 'pop':
-				if ( array.length ) {
-					return [ -1 ];
-				}
-				return null;
-			case 'push':
-				return [
-					array.length,
-					0
-				].concat( args );
-			case 'shift':
-				return [
-					0,
-					1
-				];
-			case 'unshift':
-				return [
-					0,
-					0
-				].concat( args );
-		}
-	};
+	/* shared/getNewIndices.js */
+	var getNewIndices = function() {
 
-	/* shared/summariseSpliceOperation.js */
-	var summariseSpliceOperation = function( array, args ) {
-		var rangeStart, rangeEnd, newLength, addedItems, removedItems, balance;
-		if ( !args ) {
-			return null;
-		}
-		// figure out where the changes started...
-		rangeStart = +( args[ 0 ] < 0 ? array.length + args[ 0 ] : args[ 0 ] );
-		// ...and how many items were added to or removed from the array
-		addedItems = Math.max( 0, args.length - 2 );
-		removedItems = args[ 1 ] !== undefined ? args[ 1 ] : array.length - rangeStart;
-		// It's possible to do e.g. [ 1, 2, 3 ].splice( 2, 2 ) - i.e. the second argument
-		// means removing more items from the end of the array than there are. In these
-		// cases we need to curb JavaScript's enthusiasm or we'll get out of sync
-		removedItems = Math.min( removedItems, array.length - rangeStart );
-		balance = addedItems - removedItems;
-		newLength = array.length + balance;
-		// We need to find the end of the range affected by the splice
-		if ( !balance ) {
-			rangeEnd = rangeStart + addedItems;
-		} else {
-			rangeEnd = Math.max( array.length, newLength );
-		}
-		return {
-			rangeStart: rangeStart,
-			rangeEnd: rangeEnd,
-			balance: balance,
-			added: addedItems,
-			removed: removedItems
+		var __export;
+		// This function takes an array, the name of a mutator method, and the
+		// arguments to call that mutator method with, and returns an array that
+		// maps the old indices to their new indices.
+		// So if you had something like this...
+		//
+		//     array = [ 'a', 'b', 'c', 'd' ];
+		//     array.push( 'e' );
+		//
+		// ...you'd get `[ 0, 1, 2, 3 ]` - in other words, none of the old indices
+		// have changed. If you then did this...
+		//
+		//     array.unshift( 'z' );
+		//
+		// ...the indices would be `[ 1, 2, 3, 4, 5 ]` - every item has been moved
+		// one higher to make room for the 'z'. If you removed an item, the new index
+		// would be -1...
+		//
+		//     array.splice( 2, 2 );
+		//
+		// ...this would result in [ 0, 1, -1, -1, 2, 3 ].
+		//
+		// This information is used to enable fast, non-destructive shuffling of list
+		// sections when you do e.g. `ractive.splice( 'items', 2, 2 );
+		__export = function getNewIndices( array, methodName, args ) {
+			var spliceArguments, len, newIndices = [],
+				removeStart, removeEnd, balance, i;
+			spliceArguments = getSpliceEquivalent( array, methodName, args );
+			if ( !spliceArguments ) {
+				return null;
+			}
+			len = array.length;
+			balance = spliceArguments.length - 2 - spliceArguments[ 1 ];
+			removeStart = Math.min( len, spliceArguments[ 0 ] );
+			removeEnd = removeStart + spliceArguments[ 1 ];
+			for ( i = 0; i < removeStart; i += 1 ) {
+				newIndices.push( i );
+			}
+			for ( ; i < removeEnd; i += 1 ) {
+				newIndices.push( -1 );
+			}
+			for ( ; i < len; i += 1 ) {
+				newIndices.push( i + balance );
+			}
+			return newIndices;
 		};
-	};
+		// The pop, push, shift an unshift methods can all be represented
+		// as an equivalent splice
+		function getSpliceEquivalent( array, methodName, args ) {
+			switch ( methodName ) {
+				case 'splice':
+					if ( args[ 0 ] !== undefined && args[ 0 ] < 0 ) {
+						args[ 0 ] = array.length + Math.max( args[ 0 ], -array.length );
+					}
+					while ( args.length < 2 ) {
+						args.push( 0 );
+					}
+					// ensure we only remove elements that exist
+					args[ 1 ] = Math.min( args[ 1 ], array.length - args[ 0 ] );
+					return args;
+				case 'sort':
+				case 'reverse':
+					return null;
+				case 'pop':
+					if ( array.length ) {
+						return [
+							array.length - 1,
+							1
+						];
+					}
+					return null;
+				case 'push':
+					return [
+						array.length,
+						0
+					].concat( args );
+				case 'shift':
+					return [
+						0,
+						1
+					];
+				case 'unshift':
+					return [
+						0,
+						0
+					].concat( args );
+			}
+		}
+		return __export;
+	}();
 
 	/* Ractive/prototype/shared/makeArrayMethod.js */
-	var Ractive$shared_makeArrayMethod = function( isArray, runloop, getSpliceEquivalent, summariseSpliceOperation ) {
+	var Ractive$shared_makeArrayMethod = function( isArray, runloop, getNewIndices ) {
 
 		var arrayProto = Array.prototype;
 		return function( methodName ) {
 			return function( keypath ) {
 				var SLICE$0 = Array.prototype.slice;
 				var args = SLICE$0.call( arguments, 1 );
-				var array, spliceEquivalent, spliceSummary, promise;
+				var array, newIndices = [],
+					len, promise, result;
 				array = this.get( keypath );
+				len = array.length;
 				if ( !isArray( array ) ) {
 					throw new Error( 'Called ractive.' + methodName + '(\'' + keypath + '\'), but \'' + keypath + '\' does not refer to an array' );
 				}
-				spliceEquivalent = getSpliceEquivalent( array, methodName, args );
-				spliceSummary = summariseSpliceOperation( array, spliceEquivalent );
-				arrayProto[ methodName ].apply( array, args );
-				promise = runloop.start( this, true );
-				if ( spliceSummary ) {
-					this.viewmodel.splice( keypath, spliceSummary );
+				newIndices = getNewIndices( array, methodName, args );
+				result = arrayProto[ methodName ].apply( array, args );
+				promise = runloop.start( this, true ).then( function() {
+					return result;
+				} );
+				if ( !!newIndices ) {
+					this.viewmodel.smartUpdate( keypath, array, newIndices );
 				} else {
 					this.viewmodel.mark( keypath );
 				}
@@ -5935,7 +6179,7 @@ exports.unbind = function(el, type, fn, capture){
 				return promise;
 			};
 		};
-	}( isArray, runloop, getSpliceEquivalent, summariseSpliceOperation );
+	}( isArray, runloop, getNewIndices );
 
 	/* Ractive/prototype/pop.js */
 	var Ractive$pop = function( makeArrayMethod ) {
@@ -5997,7 +6241,7 @@ exports.unbind = function(el, type, fn, capture){
 						// removed, the style is too
 						componentsInPage[ Component._guid ] = 0;
 						styles.push( Component.css );
-						runloop.scheduleTask( update );
+						update();
 					}
 					componentsInPage[ Component._guid ] += 1;
 				},
@@ -6017,16 +6261,23 @@ exports.unbind = function(el, type, fn, capture){
 	}( circular, isClient, removeFromArray );
 
 	/* Ractive/prototype/render.js */
-	var Ractive$render = function( runloop, css, getElement ) {
+	var Ractive$render = function( css, Hook, getElement, runloop ) {
 
-		var queues = {},
-			rendering = {};
+		var renderHook = new Hook( 'render' ),
+			completeHook = new Hook( 'complete' );
 		return function Ractive$render( target, anchor ) {
 			var this$0 = this;
-			var promise, instances;
-			rendering[ this._guid ] = true;
+			var promise, instances, transitionsEnabled;
+			// if `noIntro` is `true`, temporarily disable transitions
+			transitionsEnabled = this.transitionsEnabled;
+			if ( this.noIntro ) {
+				this.transitionsEnabled = false;
+			}
 			promise = runloop.start( this, true );
-			if ( this.rendered ) {
+			runloop.scheduleTask( function() {
+				return renderHook.fire( this$0 );
+			}, true );
+			if ( this.fragment.rendered ) {
 				throw new Error( 'You cannot call ractive.render() on an already rendered instance! Call ractive.unrender() first' );
 			}
 			target = getElement( target ) || this.el;
@@ -6049,45 +6300,24 @@ exports.unbind = function(el, type, fn, capture){
 					target.appendChild( this.fragment.render() );
 				}
 			}
-			// Only init once, until we rework lifecycle events
-			if ( !this._hasInited ) {
-				this._hasInited = true;
-				// If this is *isn't* a child of a component that's in the process of rendering,
-				// it should call any `init()` methods at this point
-				if ( !this._parent || !rendering[ this._parent._guid ] ) {
-					init( this );
-				} else {
-					getChildInitQueue( this._parent ).push( this );
-				}
-			}
-			rendering[ this._guid ] = false;
 			runloop.end();
-			this.rendered = true;
-			if ( this.complete ) {
-				promise.then( function() {
-					return this$0.complete();
-				} );
-			}
+			this.transitionsEnabled = transitionsEnabled;
+			// It is now more problematic to know if the complete hook
+			// would fire. Method checking is straight-forward, but would
+			// also require preflighting event subscriptions. Which seems
+			// like more work then just letting the promise happen.
+			// But perhaps I'm wrong about that...
+			promise.then( function() {
+				return completeHook.fire( this$0 );
+			} );
 			return promise;
 		};
-
-		function init( instance ) {
-			if ( instance.init ) {
-				instance.init( instance._config.options );
-			}
-			getChildInitQueue( instance ).forEach( init );
-			queues[ instance._guid ] = null;
-		}
-
-		function getChildInitQueue( instance ) {
-			return queues[ instance._guid ] || ( queues[ instance._guid ] = [] );
-		}
-	}( runloop, global_css, getElement );
+	}( global_css, Ractive$shared_hooks_Hook, getElement, runloop );
 
 	/* virtualdom/Fragment/prototype/bubble.js */
 	var virtualdom_Fragment$bubble = function Fragment$bubble() {
 		this.dirtyValue = this.dirtyArgs = true;
-		if ( this.inited && this.owner.bubble ) {
+		if ( this.bound && typeof this.owner.bubble === 'function' ) {
 			this.owner.bubble();
 		}
 	};
@@ -6100,7 +6330,15 @@ exports.unbind = function(el, type, fn, capture){
 		}
 		docFrag = document.createDocumentFragment();
 		this.items.forEach( function( item ) {
-			docFrag.appendChild( item.detach() );
+			var node = item.detach();
+			// TODO The if {...} wasn't previously required - it is now, because we're
+			// forcibly detaching everything to reorder sections after an update. That's
+			// a non-ideal brute force approach, implemented to get all the tests to pass
+			// - as soon as it's replaced with something more elegant, this should
+			// revert to `docFrag.appendChild( item.detach() )`
+			if ( node ) {
+				docFrag.appendChild( node );
+			}
 		} );
 		return docFrag;
 	};
@@ -6201,14 +6439,15 @@ exports.unbind = function(el, type, fn, capture){
 				return fragment.pElement.node;
 			}
 		} while ( fragment = fragment.parent );
-		return this.root.el;
+		return this.root.detached || this.root.el;
 	};
 
 	/* virtualdom/Fragment/prototype/getValue.js */
 	var virtualdom_Fragment$getValue = function( parseJSON ) {
 
+		var __export;
 		var empty = {};
-		return function Fragment$getValue() {
+		__export = function Fragment$getValue() {
 			var options = arguments[ 0 ];
 			if ( options === void 0 )
 				options = empty;
@@ -6252,15 +6491,17 @@ exports.unbind = function(el, type, fn, capture){
 				return '${' + placeholderId + '}';
 			} ).join( '' );
 		}
+		return __export;
 	}( parseJSON );
 
 	/* utils/escapeHtml.js */
 	var escapeHtml = function() {
 
-		var lessThan = /</g,
-			greaterThan = />/g;
+		var lessThan = /</g;
+		var greaterThan = />/g;
+		var amp = /&/g;
 		return function escapeHtml( str ) {
-			return str.replace( lessThan, '&lt;' ).replace( greaterThan, '&gt;' );
+			return str.replace( amp, '&amp;' ).replace( lessThan, '&lt;' ).replace( greaterThan, '&gt;' );
 		};
 	}();
 
@@ -6311,48 +6552,24 @@ exports.unbind = function(el, type, fn, capture){
 	}( types, escapeHtml, detach );
 
 	/* virtualdom/items/shared/unbind.js */
-	var unbind = function( runloop ) {
-
-		return function unbind() {
-			if ( !this.keypath ) {
-				// this was on the 'unresolved' list, we need to remove it
-				runloop.removeUnresolved( this );
-			} else {
-				// this was registered as a dependant
-				this.root.viewmodel.unregister( this.keypath, this );
-			}
-			if ( this.resolver ) {
-				this.resolver.teardown();
-			}
-		};
-	}( runloop );
+	var unbind = function unbind() {
+		if ( this.registered ) {
+			// this was registered as a dependant
+			this.root.viewmodel.unregister( this.keypath, this );
+		}
+		if ( this.resolver ) {
+			this.resolver.unbind();
+		}
+	};
 
 	/* virtualdom/items/shared/Mustache/getValue.js */
 	var getValue = function Mustache$getValue() {
 		return this.value;
 	};
 
-	/* shared/Unresolved.js */
-	var Unresolved = function( runloop ) {
-
-		var Unresolved = function( ractive, ref, parentFragment, callback ) {
-			this.root = ractive;
-			this.ref = ref;
-			this.parentFragment = parentFragment;
-			this.resolve = callback;
-			runloop.addUnresolved( this );
-		};
-		Unresolved.prototype = {
-			teardown: function() {
-				runloop.removeUnresolved( this );
-			}
-		};
-		return Unresolved;
-	}( runloop );
-
 	/* virtualdom/items/shared/utils/startsWithKeypath.js */
 	var startsWithKeypath = function startsWithKeypath( target, keypath ) {
-		return target.substr( 0, keypath.length + 1 ) === keypath + '.';
+		return target && keypath && target.substr( 0, keypath.length + 1 ) === keypath + '.';
 	};
 
 	/* virtualdom/items/shared/utils/getNewKeypath.js */
@@ -6361,175 +6578,142 @@ exports.unbind = function(el, type, fn, capture){
 		return function getNewKeypath( targetKeypath, oldKeypath, newKeypath ) {
 			// exact match
 			if ( targetKeypath === oldKeypath ) {
-				return newKeypath;
+				return newKeypath !== undefined ? newKeypath : null;
 			}
 			// partial match based on leading keypath segments
 			if ( startsWithKeypath( targetKeypath, oldKeypath ) ) {
-				return targetKeypath.replace( oldKeypath + '.', newKeypath + '.' );
+				return newKeypath === null ? newKeypath : targetKeypath.replace( oldKeypath + '.', newKeypath + '.' );
 			}
 		};
 	}( startsWithKeypath );
 
-	/* utils/log.js */
-	var log = function( consolewarn, errors ) {
+	/* virtualdom/items/shared/Resolvers/ReferenceResolver.js */
+	var ReferenceResolver = function( runloop, resolveRef, getNewKeypath ) {
 
-		var log = {
-			warn: function( options, passthru ) {
-				if ( !options.debug && !passthru ) {
-					return;
-				}
-				this.logger( getMessage( options ), options.allowDuplicates );
-			},
-			error: function( options ) {
-				this.errorOnly( options );
-				if ( !options.debug ) {
-					this.warn( options, true );
-				}
-			},
-			errorOnly: function( options ) {
-				if ( options.debug ) {
-					this.critical( options );
-				}
-			},
-			critical: function( options ) {
-				var err = options.err || new Error( getMessage( options ) );
-				this.thrower( err );
-			},
-			logger: consolewarn,
-			thrower: function( err ) {
-				throw err;
+		var ReferenceResolver = function( owner, ref, callback ) {
+			var keypath;
+			this.ref = ref;
+			this.resolved = false;
+			this.root = owner.root;
+			this.parentFragment = owner.parentFragment;
+			this.callback = callback;
+			keypath = resolveRef( owner.root, ref, owner.parentFragment );
+			if ( keypath !== undefined ) {
+				this.resolve( keypath );
+			} else {
+				runloop.addUnresolved( this );
 			}
 		};
-
-		function getMessage( options ) {
-			var message = errors[ options.message ] || options.message || '';
-			return interpolate( message, options.args );
-		}
-		// simple interpolation. probably quicker (and better) out there,
-		// but log is not in golden path of execution, only exceptions
-		function interpolate( message, args ) {
-			return message.replace( /{([^{}]*)}/g, function( a, b ) {
-				return args[ b ];
-			} );
-		}
-		return log;
-	}( warn, errors );
-
-	/* viewmodel/Computation/diff.js */
-	var diff = function diff( computation, dependencies, newDependencies ) {
-		var i, keypath;
-		// remove dependencies that are no longer used
-		i = dependencies.length;
-		while ( i-- ) {
-			keypath = dependencies[ i ];
-			if ( newDependencies.indexOf( keypath ) === -1 ) {
-				computation.viewmodel.unregister( keypath, computation, 'computed' );
-			}
-		}
-		// create references for any new dependencies
-		i = newDependencies.length;
-		while ( i-- ) {
-			keypath = newDependencies[ i ];
-			if ( dependencies.indexOf( keypath ) === -1 ) {
-				computation.viewmodel.register( keypath, computation, 'computed' );
-			}
-		}
-		computation.dependencies = newDependencies.slice();
-	};
-
-	/* virtualdom/items/shared/Evaluator/Evaluator.js */
-	var Evaluator = function( log, isEqual, defineProperty, diff ) {
-
-		// TODO this is a red flag... should be treated the same?
-		var Evaluator, cache = {};
-		Evaluator = function( root, keypath, uniqueString, functionStr, args, priority ) {
-			var evaluator = this,
-				viewmodel = root.viewmodel;
-			evaluator.root = root;
-			evaluator.viewmodel = viewmodel;
-			evaluator.uniqueString = uniqueString;
-			evaluator.keypath = keypath;
-			evaluator.priority = priority;
-			evaluator.fn = getFunctionFromString( functionStr, args.length );
-			evaluator.explicitDependencies = [];
-			evaluator.dependencies = [];
-			// created by `this.get()` within functions
-			evaluator.argumentGetters = args.map( function( arg ) {
-				var keypath, index;
-				if ( !arg ) {
-					return void 0;
-				}
-				if ( arg.indexRef ) {
-					index = arg.value;
-					return index;
-				}
-				keypath = arg.keypath;
-				evaluator.explicitDependencies.push( keypath );
-				viewmodel.register( keypath, evaluator, 'computed' );
-				return function() {
-					var value = viewmodel.get( keypath );
-					return typeof value === 'function' ? wrap( value, root ) : value;
-				};
-			} );
-		};
-		Evaluator.prototype = {
-			wake: function() {
-				this.awake = true;
+		ReferenceResolver.prototype = {
+			resolve: function( keypath ) {
+				this.resolved = true;
+				this.keypath = keypath;
+				this.callback( keypath );
 			},
-			sleep: function() {
-				this.awake = false;
+			forceResolution: function() {
+				this.resolve( this.ref );
 			},
-			getValue: function() {
-				var args, value, newImplicitDependencies;
-				args = this.argumentGetters.map( call );
-				if ( this.updating ) {
-					// Prevent infinite loops caused by e.g. in-place array mutations
-					return;
-				}
-				this.updating = true;
-				this.viewmodel.capture();
-				try {
-					value = this.fn.apply( null, args );
-				} catch ( err ) {
-					if ( this.root.debug ) {
-						log.warn( {
-							debug: this.root.debug,
-							message: 'evaluationError',
-							args: {
-								uniqueString: this.uniqueString,
-								err: err.message || err
-							}
-						} );
+			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
+				var keypath;
+				if ( this.keypath !== undefined ) {
+					keypath = getNewKeypath( this.keypath, oldKeypath, newKeypath );
+					// was a new keypath created?
+					if ( keypath !== undefined ) {
+						// resolve it
+						this.resolve( keypath );
 					}
-					value = undefined;
 				}
-				newImplicitDependencies = this.viewmodel.release();
-				diff( this, this.dependencies, newImplicitDependencies );
-				this.updating = false;
-				return value;
 			},
-			update: function() {
-				var value = this.getValue();
-				if ( !isEqual( value, this.value ) ) {
-					this.value = value;
-					this.root.viewmodel.mark( this.keypath );
+			unbind: function() {
+				if ( !this.resolved ) {
+					runloop.removeUnresolved( this );
 				}
-				return this;
-			},
-			// TODO should evaluators ever get torn down? At present, they don't...
-			teardown: function() {
-				var this$0 = this;
-				this.explicitDependencies.concat( this.dependencies ).forEach( function( keypath ) {
-					return this$0.viewmodel.unregister( keypath, this$0, 'computed' );
-				} );
-				this.root.viewmodel.evaluators[ this.keypath ] = null;
 			}
 		};
-		return Evaluator;
+		return ReferenceResolver;
+	}( runloop, resolveRef, getNewKeypath );
 
-		function getFunctionFromString( str, i ) {
+	/* virtualdom/items/shared/Resolvers/SpecialResolver.js */
+	var SpecialResolver = function() {
+
+		var SpecialResolver = function( owner, ref, callback ) {
+			this.parentFragment = owner.parentFragment;
+			this.ref = ref;
+			this.callback = callback;
+			this.rebind();
+		};
+		SpecialResolver.prototype = {
+			rebind: function() {
+				var ref = this.ref,
+					fragment = this.parentFragment;
+				if ( ref === '@keypath' ) {
+					while ( fragment ) {
+						if ( !!fragment.context ) {
+							return this.callback( '@' + fragment.context );
+						}
+						fragment = fragment.parent;
+					}
+				}
+				if ( ref === '@index' || ref === '@key' ) {
+					while ( fragment ) {
+						if ( fragment.index !== undefined ) {
+							return this.callback( '@' + fragment.index );
+						}
+						fragment = fragment.parent;
+					}
+				}
+				throw new Error( 'Unknown special reference "' + ref + '" - valid references are @index, @key and @keypath' );
+			},
+			unbind: function() {}
+		};
+		return SpecialResolver;
+	}();
+
+	/* virtualdom/items/shared/Resolvers/IndexResolver.js */
+	var IndexResolver = function() {
+
+		var IndexResolver = function( owner, ref, callback ) {
+			this.parentFragment = owner.parentFragment;
+			this.ref = ref;
+			this.callback = callback;
+			this.rebind();
+		};
+		IndexResolver.prototype = {
+			rebind: function() {
+				var ref = this.ref,
+					indexRefs = this.parentFragment.indexRefs,
+					index = indexRefs[ ref ];
+				if ( index !== undefined ) {
+					this.callback( '@' + index );
+				}
+			},
+			unbind: function() {}
+		};
+		return IndexResolver;
+	}();
+
+	/* virtualdom/items/shared/Resolvers/createReferenceResolver.js */
+	var createReferenceResolver = function( ReferenceResolver, SpecialResolver, IndexResolver ) {
+
+		return function createReferenceResolver( owner, ref, callback ) {
+			var indexRefs, index;
+			if ( ref.charAt( 0 ) === '@' ) {
+				return new SpecialResolver( owner, ref, callback );
+			}
+			indexRefs = owner.parentFragment.indexRefs;
+			if ( indexRefs && ( index = indexRefs[ ref ] ) !== undefined ) {
+				return new IndexResolver( owner, ref, callback );
+			}
+			return new ReferenceResolver( owner, ref, callback );
+		};
+	}( ReferenceResolver, SpecialResolver, IndexResolver );
+
+	/* shared/getFunctionFromString.js */
+	var getFunctionFromString = function() {
+
+		var cache = {};
+		return function getFunctionFromString( str, i ) {
 			var fn, args;
-			str = str.replace( /\$\{([0-9]+)\}/g, '_$1' );
 			if ( cache[ str ] ) {
 				return cache[ str ];
 			}
@@ -6540,10 +6724,140 @@ exports.unbind = function(el, type, fn, capture){
 			fn = new Function( args.join( ',' ), 'return(' + str + ')' );
 			cache[ str ] = fn;
 			return fn;
+		};
+	}();
+
+	/* virtualdom/items/shared/Resolvers/ExpressionResolver.js */
+	var ExpressionResolver = function( defineProperty, isNumeric, createReferenceResolver, getFunctionFromString ) {
+
+		var __export;
+		var ExpressionResolver, bind = Function.prototype.bind;
+		ExpressionResolver = function( owner, parentFragment, expression, callback ) {
+			var resolver = this,
+				ractive, indexRefs;
+			ractive = owner.root;
+			resolver.root = ractive;
+			resolver.parentFragment = parentFragment;
+			resolver.callback = callback;
+			resolver.owner = owner;
+			resolver.str = expression.s;
+			resolver.keypaths = [];
+			indexRefs = parentFragment.indexRefs;
+			// Create resolvers for each reference
+			resolver.pending = expression.r.length;
+			resolver.refResolvers = expression.r.map( function( ref, i ) {
+				return createReferenceResolver( resolver, ref, function( keypath ) {
+					resolver.resolve( i, keypath );
+				} );
+			} );
+			resolver.ready = true;
+			resolver.bubble();
+		};
+		ExpressionResolver.prototype = {
+			bubble: function() {
+				if ( !this.ready ) {
+					return;
+				}
+				this.uniqueString = getUniqueString( this.str, this.keypaths );
+				this.keypath = getKeypath( this.uniqueString );
+				this.createEvaluator();
+				this.callback( this.keypath );
+			},
+			unbind: function() {
+				var resolver;
+				while ( resolver = this.refResolvers.pop() ) {
+					resolver.unbind();
+				}
+			},
+			resolve: function( index, keypath ) {
+				this.keypaths[ index ] = keypath;
+				this.bubble();
+			},
+			createEvaluator: function() {
+				var this$0 = this;
+				var self = this,
+					computation, valueGetters, signature, keypath, fn;
+				computation = this.root.viewmodel.computations[ this.keypath ];
+				// only if it doesn't exist yet!
+				if ( !computation ) {
+					fn = getFunctionFromString( this.str, this.refResolvers.length );
+					valueGetters = this.keypaths.map( function( keypath ) {
+						var value;
+						if ( keypath === 'undefined' ) {
+							return function() {
+								return undefined;
+							};
+						}
+						// 'special' keypaths encode a value
+						if ( keypath[ 0 ] === '@' ) {
+							value = keypath.slice( 1 );
+							return isNumeric( value ) ? function() {
+								return +value;
+							} : function() {
+								return value;
+							};
+						}
+						return function() {
+							var value = this$0.root.viewmodel.get( keypath );
+							if ( typeof value === 'function' ) {
+								value = wrapFunction( value, self.root );
+							}
+							return value;
+						};
+					} );
+					signature = {
+						deps: this.keypaths.filter( isValidDependency ),
+						get: function() {
+							var args = valueGetters.map( call );
+							return fn.apply( null, args );
+						}
+					};
+					computation = this.root.viewmodel.compute( this.keypath, signature );
+				} else {
+					this.root.viewmodel.mark( this.keypath );
+				}
+			},
+			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
+				// TODO only bubble once, no matter how many references are affected by the rebind
+				this.refResolvers.forEach( function( r ) {
+					return r.rebind( indexRef, newIndex, oldKeypath, newKeypath );
+				} );
+			}
+		};
+		__export = ExpressionResolver;
+
+		function call( value ) {
+			return value.call();
 		}
 
-		function wrap( fn, ractive ) {
-			var wrapped, prop;
+		function getUniqueString( str, keypaths ) {
+			// get string that is unique to this expression
+			return str.replace( /_([0-9]+)/g, function( match, $1 ) {
+				var keypath, value;
+				keypath = keypaths[ $1 ];
+				if ( keypath === undefined ) {
+					return 'undefined';
+				}
+				if ( keypath[ 0 ] === '@' ) {
+					value = keypath.slice( 1 );
+					return isNumeric( value ) ? value : '"' + value + '"';
+				}
+				return keypath;
+			} );
+		}
+
+		function getKeypath( uniqueString ) {
+			// Sanitize by removing any periods or square brackets. Otherwise
+			// we can't split the keypath into keys!
+			return '${' + uniqueString.replace( /[\.\[\]]/g, '-' ) + '}';
+		}
+
+		function isValidDependency( keypath ) {
+			return keypath !== undefined && keypath[ 0 ] !== '@';
+		}
+
+		function wrapFunction( fn, ractive ) {
+			var wrapped, prop, key;
 			if ( fn._noWrap ) {
 				return fn;
 			}
@@ -6553,8 +6867,14 @@ exports.unbind = function(el, type, fn, capture){
 				return wrapped;
 			} else if ( /this/.test( fn.toString() ) ) {
 				defineProperty( fn, prop, {
-					value: fn.bind( ractive )
+					value: bind.call( fn, ractive )
 				} );
+				// Add properties/methods to wrapped function
+				for ( key in fn ) {
+					if ( fn.hasOwnProperty( key ) ) {
+						fn[ prop ][ key ] = fn[ key ];
+					}
+				}
 				return fn[ prop ];
 			}
 			defineProperty( fn, '__ractive_nowrap', {
@@ -6562,167 +6882,25 @@ exports.unbind = function(el, type, fn, capture){
 			} );
 			return fn.__ractive_nowrap;
 		}
-
-		function call( arg ) {
-			return typeof arg === 'function' ? arg() : arg;
-		}
-	}( log, isEqual, defineProperty, diff );
-
-	/* virtualdom/items/shared/Resolvers/ExpressionResolver.js */
-	var ExpressionResolver = function( removeFromArray, resolveRef, Unresolved, Evaluator, getNewKeypath ) {
-
-		var ExpressionResolver = function( owner, parentFragment, expression, callback ) {
-			var expressionResolver = this,
-				ractive, indexRefs, args;
-			ractive = owner.root;
-			this.root = ractive;
-			this.callback = callback;
-			this.owner = owner;
-			this.str = expression.s;
-			this.args = args = [];
-			this.unresolved = [];
-			this.pending = 0;
-			indexRefs = parentFragment.indexRefs;
-			// some expressions don't have references. edge case, but, yeah.
-			if ( !expression.r || !expression.r.length ) {
-				this.resolved = this.ready = true;
-				this.bubble();
-				return;
-			}
-			// Create resolvers for each reference
-			expression.r.forEach( function( reference, i ) {
-				var index, keypath, unresolved;
-				// Is this an index reference?
-				if ( indexRefs && ( index = indexRefs[ reference ] ) !== undefined ) {
-					args[ i ] = {
-						indexRef: reference,
-						value: index
-					};
-					return;
-				}
-				// Can we resolve it immediately?
-				if ( keypath = resolveRef( ractive, reference, parentFragment ) ) {
-					args[ i ] = {
-						keypath: keypath
-					};
-					return;
-				}
-				// Couldn't resolve yet
-				args[ i ] = null;
-				expressionResolver.pending += 1;
-				unresolved = new Unresolved( ractive, reference, parentFragment, function( keypath ) {
-					expressionResolver.resolve( i, keypath );
-					removeFromArray( expressionResolver.unresolved, unresolved );
-				} );
-				expressionResolver.unresolved.push( unresolved );
-			} );
-			this.ready = true;
-			this.bubble();
-		};
-		ExpressionResolver.prototype = {
-			bubble: function() {
-				if ( !this.ready ) {
-					return;
-				}
-				this.uniqueString = getUniqueString( this.str, this.args );
-				this.keypath = getKeypath( this.uniqueString );
-				this.createEvaluator();
-				this.callback( this.keypath );
-			},
-			teardown: function() {
-				var unresolved;
-				while ( unresolved = this.unresolved.pop() ) {
-					unresolved.teardown();
-				}
-			},
-			resolve: function( index, keypath ) {
-				this.args[ index ] = {
-					keypath: keypath
-				};
-				this.bubble();
-				// when all references have been resolved, we can flag the entire expression
-				// as having been resolved
-				this.resolved = !--this.pending;
-			},
-			createEvaluator: function() {
-				var evaluator = this.root.viewmodel.evaluators[ this.keypath ];
-				// only if it doesn't exist yet!
-				if ( !evaluator ) {
-					evaluator = new Evaluator( this.root, this.keypath, this.uniqueString, this.str, this.args, this.owner.priority );
-					this.root.viewmodel.evaluators[ this.keypath ] = evaluator;
-				}
-				evaluator.update();
-			},
-			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
-				var changed;
-				this.args.forEach( function( arg ) {
-					var changedKeypath;
-					if ( !arg )
-						return;
-					if ( arg.keypath && ( changedKeypath = getNewKeypath( arg.keypath, oldKeypath, newKeypath ) ) ) {
-						arg.keypath = changedKeypath;
-						changed = true;
-					} else if ( arg.indexRef && arg.indexRef === indexRef ) {
-						arg.value = newIndex;
-						changed = true;
-					}
-				} );
-				if ( changed ) {
-					this.bubble();
-				}
-			}
-		};
-		return ExpressionResolver;
-
-		function getUniqueString( str, args ) {
-			// get string that is unique to this expression
-			return str.replace( /\$\{([0-9]+)\}/g, function( match, $1 ) {
-				var arg = args[ $1 ];
-				if ( !arg )
-					return 'undefined';
-				if ( arg.indexRef )
-					return arg.value;
-				return arg.keypath;
-			} );
-		}
-
-		function getKeypath( uniqueString ) {
-			// Sanitize by removing any periods or square brackets. Otherwise
-			// we can't split the keypath into keys!
-			return '${' + uniqueString.replace( /[\.\[\]]/g, '-' ) + '}';
-		}
-	}( removeFromArray, resolveRef, Unresolved, Evaluator, getNewKeypath );
+		return __export;
+	}( defineProperty, isNumeric, createReferenceResolver, getFunctionFromString, legacy );
 
 	/* virtualdom/items/shared/Resolvers/ReferenceExpressionResolver/MemberResolver.js */
-	var MemberResolver = function( types, resolveRef, Unresolved, getNewKeypath, ExpressionResolver ) {
+	var MemberResolver = function( types, createReferenceResolver, ExpressionResolver ) {
 
 		var MemberResolver = function( template, resolver, parentFragment ) {
 			var member = this,
-				ref, indexRefs, index, ractive, keypath;
+				keypath;
 			member.resolver = resolver;
 			member.root = resolver.root;
+			member.parentFragment = parentFragment;
 			member.viewmodel = resolver.root.viewmodel;
 			if ( typeof template === 'string' ) {
 				member.value = template;
 			} else if ( template.t === types.REFERENCE ) {
-				ref = member.ref = template.n;
-				// If it's an index reference, our job is simple
-				if ( ( indexRefs = parentFragment.indexRefs ) && ( index = indexRefs[ ref ] ) !== undefined ) {
-					member.indexRef = ref;
-					member.value = index;
-				} else {
-					ractive = resolver.root;
-					// Can we resolve the reference immediately?
-					if ( keypath = resolveRef( ractive, ref, parentFragment ) ) {
-						member.resolve( keypath );
-					} else {
-						// Couldn't resolve yet
-						member.unresolved = new Unresolved( ractive, ref, parentFragment, function( keypath ) {
-							member.unresolved = null;
-							member.resolve( keypath );
-						} );
-					}
-				}
+				member.refResolver = createReferenceResolver( this, template.n, function( keypath ) {
+					member.resolve( keypath );
+				} );
 			} else {
 				new ExpressionResolver( resolver, parentFragment, template, function( keypath ) {
 					member.resolve( keypath );
@@ -6731,6 +6909,9 @@ exports.unbind = function(el, type, fn, capture){
 		};
 		MemberResolver.prototype = {
 			resolve: function( keypath ) {
+				if ( this.keypath ) {
+					this.viewmodel.unregister( this.keypath, this );
+				}
 				this.keypath = keypath;
 				this.value = this.viewmodel.get( keypath );
 				this.bind();
@@ -6740,18 +6921,8 @@ exports.unbind = function(el, type, fn, capture){
 				this.viewmodel.register( this.keypath, this );
 			},
 			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
-				var keypath;
-				if ( indexRef && this.indexRef === indexRef ) {
-					if ( newIndex !== this.value ) {
-						this.value = newIndex;
-						return true;
-					}
-				} else if ( this.keypath && ( keypath = getNewKeypath( this.keypath, oldKeypath, newKeypath ) ) ) {
-					this.unbind();
-					this.keypath = keypath;
-					this.value = this.root.viewmodel.get( keypath );
-					this.bind();
-					return true;
+				if ( this.refResolver ) {
+					this.refResolver.rebind( indexRef, newIndex, oldKeypath, newKeypath );
 				}
 			},
 			setValue: function( value ) {
@@ -6760,39 +6931,31 @@ exports.unbind = function(el, type, fn, capture){
 			},
 			unbind: function() {
 				if ( this.keypath ) {
-					this.root.viewmodel.unregister( this.keypath, this );
+					this.viewmodel.unregister( this.keypath, this );
 				}
-			},
-			teardown: function() {
-				this.unbind();
 				if ( this.unresolved ) {
-					this.unresolved.teardown();
+					this.unresolved.unbind();
 				}
 			},
 			forceResolution: function() {
-				if ( this.unresolved ) {
-					this.unresolved.teardown();
-					this.unresolved = null;
-					this.keypath = this.ref;
-					this.value = this.viewmodel.get( this.ref );
-					this.bind();
+				if ( this.refResolver ) {
+					this.refResolver.forceResolution();
 				}
 			}
 		};
 		return MemberResolver;
-	}( types, resolveRef, Unresolved, getNewKeypath, ExpressionResolver );
+	}( types, createReferenceResolver, ExpressionResolver );
 
 	/* virtualdom/items/shared/Resolvers/ReferenceExpressionResolver/ReferenceExpressionResolver.js */
-	var ReferenceExpressionResolver = function( resolveRef, Unresolved, MemberResolver ) {
+	var ReferenceExpressionResolver = function( resolveRef, ReferenceResolver, MemberResolver ) {
 
 		var ReferenceExpressionResolver = function( mustache, template, callback ) {
 			var this$0 = this;
 			var resolver = this,
 				ractive, ref, keypath, parentFragment;
-			parentFragment = mustache.parentFragment;
+			resolver.parentFragment = parentFragment = mustache.parentFragment;
 			resolver.root = ractive = mustache.root;
 			resolver.mustache = mustache;
-			resolver.priority = mustache.priority;
 			resolver.ref = ref = template.r;
 			resolver.callback = callback;
 			resolver.unresolved = [];
@@ -6800,7 +6963,7 @@ exports.unbind = function(el, type, fn, capture){
 			if ( keypath = resolveRef( ractive, ref, parentFragment ) ) {
 				resolver.base = keypath;
 			} else {
-				resolver.baseResolver = new Unresolved( ractive, ref, parentFragment, function( keypath ) {
+				resolver.baseResolver = new ReferenceResolver( this, ref, function( keypath ) {
 					resolver.base = keypath;
 					resolver.baseResolver = null;
 					resolver.bubble();
@@ -6817,7 +6980,7 @@ exports.unbind = function(el, type, fn, capture){
 			getKeypath: function() {
 				var values = this.members.map( getValue );
 				if ( !values.every( isDefined ) || this.baseResolver ) {
-					return;
+					return null;
 				}
 				return this.base + '.' + values.join( '.' );
 			},
@@ -6827,7 +6990,7 @@ exports.unbind = function(el, type, fn, capture){
 				}
 				this.callback( this.getKeypath() );
 			},
-			teardown: function() {
+			unbind: function() {
 				this.members.forEach( unbind );
 			},
 			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
@@ -6844,7 +7007,7 @@ exports.unbind = function(el, type, fn, capture){
 			forceResolution: function() {
 				if ( this.baseResolver ) {
 					this.base = this.ref;
-					this.baseResolver.teardown();
+					this.baseResolver.unbind();
 					this.baseResolver = null;
 				}
 				this.members.forEach( function( m ) {
@@ -6866,13 +7029,13 @@ exports.unbind = function(el, type, fn, capture){
 			member.unbind();
 		}
 		return ReferenceExpressionResolver;
-	}( resolveRef, Unresolved, MemberResolver );
+	}( resolveRef, ReferenceResolver, MemberResolver );
 
 	/* virtualdom/items/shared/Mustache/initialise.js */
-	var initialise = function( types, runloop, resolveRef, ReferenceExpressionResolver, ExpressionResolver ) {
+	var initialise = function( types, createReferenceResolver, ReferenceExpressionResolver, ExpressionResolver ) {
 
 		return function Mustache$init( mustache, options ) {
-			var ref, keypath, indexRefs, index, parentFragment, template;
+			var ref, parentFragment, template;
 			parentFragment = options.parentFragment;
 			template = options.template;
 			mustache.root = parentFragment.root;
@@ -6880,25 +7043,13 @@ exports.unbind = function(el, type, fn, capture){
 			mustache.pElement = parentFragment.pElement;
 			mustache.template = options.template;
 			mustache.index = options.index || 0;
-			mustache.priority = parentFragment.priority;
 			mustache.isStatic = options.template.s;
 			mustache.type = options.template.t;
+			mustache.registered = false;
 			// if this is a simple mustache, with a reference, we just need to resolve
 			// the reference to a keypath
 			if ( ref = template.r ) {
-				indexRefs = parentFragment.indexRefs;
-				if ( indexRefs && ( index = indexRefs[ ref ] ) !== undefined ) {
-					mustache.indexRef = ref;
-					mustache.setValue( index );
-					return;
-				}
-				keypath = resolveRef( mustache.root, ref, mustache.parentFragment );
-				if ( keypath !== undefined ) {
-					mustache.resolve( keypath );
-				} else {
-					mustache.ref = ref;
-					runloop.addUnresolved( mustache );
-				}
+				mustache.resolver = new createReferenceResolver( mustache, ref, resolve );
 			}
 			// if it's an expression, we have a bit more work to do
 			if ( options.template.x ) {
@@ -6910,6 +7061,10 @@ exports.unbind = function(el, type, fn, capture){
 			// Special case - inverted sections
 			if ( mustache.template.n === types.SECTION_UNLESS && !mustache.hasOwnProperty( 'value' ) ) {
 				mustache.setValue( undefined );
+			}
+
+			function resolve( keypath ) {
+				mustache.resolve( keypath );
 			}
 
 			function resolveAndRebindChildren( newKeypath ) {
@@ -6924,59 +7079,62 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			}
 		};
-	}( types, runloop, resolveRef, ReferenceExpressionResolver, ExpressionResolver );
+	}( types, createReferenceResolver, ReferenceExpressionResolver, ExpressionResolver );
 
 	/* virtualdom/items/shared/Mustache/resolve.js */
-	var resolve = function Mustache$resolve( keypath ) {
-		var wasResolved, value, twowayBinding;
-		// If we resolved previously, we need to unregister
-		if ( this.keypath !== undefined ) {
-			this.root.viewmodel.unregister( this.keypath, this );
-			wasResolved = true;
-		}
-		this.keypath = keypath;
-		// If the new keypath exists, we need to register
-		// with the viewmodel
-		if ( keypath !== undefined ) {
-			value = this.root.viewmodel.get( keypath );
-			this.root.viewmodel.register( keypath, this );
-		}
-		// Either way we need to queue up a render (`value`
-		// will be `undefined` if there's no keypath)
-		this.setValue( value );
-		// Two-way bindings need to point to their new target keypath
-		if ( wasResolved && ( twowayBinding = this.twowayBinding ) ) {
-			twowayBinding.rebound();
-		}
-	};
+	var resolve = function( isNumeric ) {
 
-	/* virtualdom/items/shared/Mustache/rebind.js */
-	var rebind = function( getNewKeypath ) {
-
-		return function Mustache$rebind( indexRef, newIndex, oldKeypath, newKeypath ) {
-			var keypath;
-			// Children first
-			if ( this.fragments ) {
-				this.fragments.forEach( function( f ) {
-					return f.rebind( indexRef, newIndex, oldKeypath, newKeypath );
-				} );
-			}
-			// Expression mustache?
-			if ( this.resolver ) {
-				this.resolver.rebind( indexRef, newIndex, oldKeypath, newKeypath );
-			}
-			// Normal keypath mustache or reference expression?
-			if ( this.keypath ) {
-				// was a new keypath created?
-				if ( keypath = getNewKeypath( this.keypath, oldKeypath, newKeypath ) ) {
-					// resolve it
-					this.resolve( keypath );
+		return function Mustache$resolve( keypath ) {
+			var wasResolved, value, twowayBinding;
+			// 'Special' keypaths, e.g. @foo or @7, encode a value
+			if ( keypath && keypath[ 0 ] === '@' ) {
+				value = keypath.slice( 1 );
+				if ( isNumeric( value ) ) {
+					value = +value;
 				}
-			} else if ( indexRef !== undefined && this.indexRef === indexRef ) {
-				this.setValue( newIndex );
+				this.keypath = keypath;
+				this.setValue( value );
+				return;
+			}
+			// If we resolved previously, we need to unregister
+			if ( this.registered ) {
+				// undefined or null
+				this.root.viewmodel.unregister( this.keypath, this );
+				this.registered = false;
+				wasResolved = true;
+			}
+			this.keypath = keypath;
+			// If the new keypath exists, we need to register
+			// with the viewmodel
+			if ( keypath != undefined ) {
+				// undefined or null
+				value = this.root.viewmodel.get( keypath );
+				this.root.viewmodel.register( keypath, this );
+				this.registered = true;
+			}
+			// Either way we need to queue up a render (`value`
+			// will be `undefined` if there's no keypath)
+			this.setValue( value );
+			// Two-way bindings need to point to their new target keypath
+			if ( wasResolved && ( twowayBinding = this.twowayBinding ) ) {
+				twowayBinding.rebound();
 			}
 		};
-	}( getNewKeypath );
+	}( isNumeric );
+
+	/* virtualdom/items/shared/Mustache/rebind.js */
+	var rebind = function Mustache$rebind( indexRef, newIndex, oldKeypath, newKeypath ) {
+		// Children first
+		if ( this.fragments ) {
+			this.fragments.forEach( function( f ) {
+				return f.rebind( indexRef, newIndex, oldKeypath, newKeypath );
+			} );
+		}
+		// Expression mustache?
+		if ( this.resolver ) {
+			this.resolver.rebind( indexRef, newIndex, oldKeypath, newKeypath );
+		}
+	};
 
 	/* virtualdom/items/shared/Mustache/_Mustache.js */
 	var Mustache = function( getValue, init, resolve, rebind ) {
@@ -6990,7 +7148,7 @@ exports.unbind = function(el, type, fn, capture){
 	}( getValue, initialise, resolve, rebind );
 
 	/* virtualdom/items/Interpolator.js */
-	var Interpolator = function( types, runloop, escapeHtml, detachNode, unbind, Mustache, detach ) {
+	var Interpolator = function( types, runloop, escapeHtml, detachNode, isEqual, unbind, Mustache, detach ) {
 
 		var Interpolator = function( options ) {
 			this.type = types.INTERPOLATOR;
@@ -7023,7 +7181,7 @@ exports.unbind = function(el, type, fn, capture){
 				if ( wrapper = this.root.viewmodel.wrapped[ this.keypath ] ) {
 					value = wrapper.get();
 				}
-				if ( value !== this.value ) {
+				if ( !isEqual( value, this.value ) ) {
 					this.value = value;
 					this.parentFragment.bubble();
 					if ( this.node ) {
@@ -7040,7 +7198,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 		};
 		return Interpolator;
-	}( types, runloop, escapeHtml, detachNode, unbind, Mustache, detach );
+	}( types, runloop, escapeHtml, detachNode, isEqual, unbind, Mustache, detach );
 
 	/* virtualdom/items/Section/prototype/bubble.js */
 	var virtualdom_items_Section$bubble = function Section$bubble() {
@@ -7123,19 +7281,26 @@ exports.unbind = function(el, type, fn, capture){
 		return this.parentFragment.findNextNode( this );
 	};
 
-	/* virtualdom/items/Section/prototype/merge.js */
-	var virtualdom_items_Section$merge = function( runloop, circular ) {
+	/* virtualdom/items/Section/prototype/shuffle.js */
+	var virtualdom_items_Section$shuffle = function( types, runloop, circular ) {
 
 		var Fragment;
 		circular.push( function() {
 			Fragment = circular.Fragment;
 		} );
-		return function Section$merge( newIndices ) {
+		return function Section$shuffle( newIndices ) {
+			var this$0 = this;
 			var section = this,
-				parentFragment, firstChange, i, newLength, reboundFragments, fragmentOptions, fragment, nextNode;
-			if ( this.unbound ) {
+				parentFragment, firstChange, i, newLength, reboundFragments, fragmentOptions, fragment;
+			// short circuit any double-updates, and ensure that this isn't applied to
+			// non-list sections
+			if ( this.shuffling || this.unbound || this.subtype && this.subtype !== types.SECTION_EACH ) {
 				return;
 			}
+			this.shuffling = true;
+			runloop.scheduleTask( function() {
+				return this$0.shuffling = false;
+			} );
 			parentFragment = this.parentFragment;
 			reboundFragments = [];
 			// first, rebind existing fragments
@@ -7160,6 +7325,7 @@ exports.unbind = function(el, type, fn, capture){
 				oldKeypath = section.keypath + '.' + oldIndex;
 				newKeypath = section.keypath + '.' + newIndex;
 				fragment.rebind( section.template.i, newIndex, oldKeypath, newKeypath );
+				fragment.index = newIndex;
 				reboundFragments[ newIndex ] = fragment;
 			} );
 			newLength = this.root.get( this.keypath ).length;
@@ -7173,7 +7339,9 @@ exports.unbind = function(el, type, fn, capture){
 				firstChange = this.length;
 			}
 			this.length = this.fragments.length = newLength;
-			runloop.addView( this );
+			if ( this.rendered ) {
+				runloop.addView( this );
+			}
 			// Prepare new fragment options
 			fragmentOptions = {
 				template: this.template.f,
@@ -7186,21 +7354,14 @@ exports.unbind = function(el, type, fn, capture){
 			// Add as many new fragments as we need to, or add back existing
 			// (detached) fragments
 			for ( i = firstChange; i < newLength; i += 1 ) {
-				// is this an existing fragment?
-				if ( fragment = reboundFragments[ i ] ) {
-					this.docFrag.appendChild( fragment.detach( false ) );
-				} else {
-					// Fragment will be created when changes are applied
-					// by the runloop
+				fragment = reboundFragments[ i ];
+				if ( !fragment ) {
 					this.fragmentsToCreate.push( i );
 				}
 				this.fragments[ i ] = fragment;
 			}
-			// reinsert fragment
-			nextNode = parentFragment.findNextNode( this );
-			this.parentFragment.getNode().insertBefore( this.docFrag, nextNode );
 		};
-	}( runloop, circular );
+	}( types, runloop, circular );
 
 	/* virtualdom/items/Section/prototype/render.js */
 	var virtualdom_items_Section$render = function Section$render() {
@@ -7211,14 +7372,25 @@ exports.unbind = function(el, type, fn, capture){
 		return docFrag;
 	};
 
-	/* virtualdom/items/Section/prototype/setValue.js */
-	var virtualdom_items_Section$setValue = function( types, isArray, isObject, runloop, circular ) {
+	/* utils/isArrayLike.js */
+	var isArrayLike = function() {
 
+		var pattern = /^\[object (?:Array|FileList)\]$/,
+			toString = Object.prototype.toString;
+		return function isArrayLike( obj ) {
+			return pattern.test( toString.call( obj ) );
+		};
+	}();
+
+	/* virtualdom/items/Section/prototype/setValue.js */
+	var virtualdom_items_Section$setValue = function( types, isArrayLike, isObject, runloop, circular ) {
+
+		var __export;
 		var Fragment;
 		circular.push( function() {
 			Fragment = circular.Fragment;
 		} );
-		return function Section$setValue( value ) {
+		__export = function Section$setValue( value ) {
 			var this$0 = this;
 			var wrapper, fragmentOptions;
 			if ( this.updating ) {
@@ -7279,6 +7451,8 @@ exports.unbind = function(el, type, fn, capture){
 						return reevaluateConditionalSection( section, value, true, fragmentOptions );
 					case types.SECTION_WITH:
 						return reevaluateContextSection( section, fragmentOptions );
+					case types.SECTION_IF_WITH:
+						return reevaluateConditionalContextSection( section, value, fragmentOptions );
 					case types.SECTION_EACH:
 						if ( isObject( value ) ) {
 							return reevaluateListObjectSection( section, value, fragmentOptions );
@@ -7286,7 +7460,7 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			}
 			// Otherwise we need to work out what sort of section we're dealing with
-			section.ordered = !!isArray( value );
+			section.ordered = !!isArrayLike( value );
 			// Ordered list section
 			if ( section.ordered ) {
 				return reevaluateListSection( section, value, fragmentOptions );
@@ -7368,6 +7542,14 @@ exports.unbind = function(el, type, fn, capture){
 			return changed;
 		}
 
+		function reevaluateConditionalContextSection( section, value, fragmentOptions ) {
+			if ( value ) {
+				return reevaluateContextSection( section, fragmentOptions );
+			} else {
+				return removeSectionFragments( section );
+			}
+		}
+
 		function reevaluateContextSection( section, fragmentOptions ) {
 			var fragment;
 			// ...then if it isn't rendered, render it, adding section.keypath to the context stack
@@ -7385,12 +7567,20 @@ exports.unbind = function(el, type, fn, capture){
 		}
 
 		function reevaluateConditionalSection( section, value, inverted, fragmentOptions ) {
-			var doRender, emptyArray, fragment;
-			emptyArray = isArray( value ) && value.length === 0;
+			var doRender, emptyArray, emptyObject, fragment, name;
+			emptyArray = isArrayLike( value ) && value.length === 0;
+			emptyObject = false;
+			if ( !isArrayLike( value ) && isObject( value ) ) {
+				emptyObject = true;
+				for ( name in value ) {
+					emptyObject = false;
+					break;
+				}
+			}
 			if ( inverted ) {
-				doRender = emptyArray || !value;
+				doRender = emptyArray || emptyObject || !value;
 			} else {
-				doRender = value && !emptyArray;
+				doRender = value && !emptyArray && !emptyObject;
 			}
 			if ( doRender ) {
 				if ( !section.length ) {
@@ -7406,10 +7596,16 @@ exports.unbind = function(el, type, fn, capture){
 					section.fragmentsToUnrender.forEach( unbind );
 					return true;
 				}
-			} else if ( section.length ) {
-				section.fragmentsToUnrender = section.fragments.splice( 0, section.fragments.length );
+			} else {
+				return removeSectionFragments( section );
+			}
+		}
+
+		function removeSectionFragments( section ) {
+			if ( section.length ) {
+				section.fragmentsToUnrender = section.fragments.splice( 0, section.fragments.length ).filter( isRendered );
 				section.fragmentsToUnrender.forEach( unbind );
-				section.length = 0;
+				section.length = section.fragmentsToRender.length = 0;
 				return true;
 			}
 		}
@@ -7417,87 +7613,12 @@ exports.unbind = function(el, type, fn, capture){
 		function unbind( fragment ) {
 			fragment.unbind();
 		}
-	}( types, isArray, isObject, runloop, circular );
 
-	/* virtualdom/items/Section/prototype/splice.js */
-	var virtualdom_items_Section$splice = function( runloop, circular ) {
-
-		var Fragment;
-		circular.push( function() {
-			Fragment = circular.Fragment;
-		} );
-		return function Section$splice( spliceSummary ) {
-			var section = this,
-				balance, start, insertStart, insertEnd, spliceArgs;
-			// In rare cases, a section will receive a splice instruction after it has
-			// been unbound (see https://github.com/ractivejs/ractive/issues/967). This
-			// prevents errors arising from those situations
-			if ( this.unbound ) {
-				return;
-			}
-			balance = spliceSummary.balance;
-			if ( !balance ) {
-				// The array length hasn't changed - we don't need to add or remove anything
-				return;
-			}
-			// Register with the runloop, so we can (un)render with the
-			// next batch of DOM changes
-			runloop.addView( section );
-			start = spliceSummary.rangeStart;
-			section.length += balance;
-			// If more items were removed from the array than added, we tear down
-			// the excess fragments and remove them...
-			if ( balance < 0 ) {
-				section.fragmentsToUnrender = section.fragments.splice( start, -balance );
-				section.fragmentsToUnrender.forEach( unbind );
-				// Reassign fragments after the ones we've just removed
-				rebindFragments( section, start, section.length, balance );
-				// Nothing more to do
-				return;
-			}
-			// ...otherwise we need to add some things to the DOM.
-			insertStart = start + spliceSummary.removed;
-			insertEnd = start + spliceSummary.added;
-			// Make room for the new fragments by doing a splice that simulates
-			// what happened to the data array
-			spliceArgs = [
-				insertStart,
-				0
-			];
-			spliceArgs.length += balance;
-			section.fragments.splice.apply( section.fragments, spliceArgs );
-			// Rebind existing fragments at the end of the array
-			rebindFragments( section, insertEnd, section.length, balance );
-			// Schedule new fragments to be created
-			section.fragmentsToCreate = range( insertStart, insertEnd );
-		};
-
-		function unbind( fragment ) {
-			fragment.unbind();
+		function isRendered( fragment ) {
+			return fragment.rendered;
 		}
-
-		function range( start, end ) {
-			var array = [],
-				i;
-			for ( i = start; i < end; i += 1 ) {
-				array.push( i );
-			}
-			return array;
-		}
-
-		function rebindFragments( section, start, end, by ) {
-			var i, fragment, indexRef, oldKeypath, newKeypath;
-			indexRef = section.template.i;
-			for ( i = start; i < end; i += 1 ) {
-				fragment = section.fragments[ i ];
-				oldKeypath = section.keypath + '.' + ( i - by );
-				newKeypath = section.keypath + '.' + i;
-				// change the fragment index
-				fragment.index = i;
-				fragment.rebind( indexRef, i, oldKeypath, newKeypath );
-			}
-		}
-	}( runloop, circular );
+		return __export;
+	}( types, isArrayLike, isObject, runloop, circular );
 
 	/* virtualdom/items/Section/prototype/toString.js */
 	var virtualdom_items_Section$toString = function Section$toString( escape ) {
@@ -7514,7 +7635,8 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/items/Section/prototype/unbind.js */
 	var virtualdom_items_Section$unbind = function( unbind ) {
 
-		return function Section$unbind() {
+		var __export;
+		__export = function Section$unbind() {
 			this.fragments.forEach( unbindFragment );
 			unbind.call( this );
 			this.length = 0;
@@ -7524,12 +7646,14 @@ exports.unbind = function(el, type, fn, capture){
 		function unbindFragment( fragment ) {
 			fragment.unbind();
 		}
+		return __export;
 	}( unbind );
 
 	/* virtualdom/items/Section/prototype/unrender.js */
 	var virtualdom_items_Section$unrender = function() {
 
-		return function Section$unrender( shouldDestroy ) {
+		var __export;
+		__export = function Section$unrender( shouldDestroy ) {
 			this.fragments.forEach( shouldDestroy ? unrenderAndDestroy : unrender );
 		};
 
@@ -7540,44 +7664,58 @@ exports.unbind = function(el, type, fn, capture){
 		function unrender( fragment ) {
 			fragment.unrender( false );
 		}
+		return __export;
 	}();
 
 	/* virtualdom/items/Section/prototype/update.js */
 	var virtualdom_items_Section$update = function Section$update() {
-		var fragment, rendered, nextFragment, anchor, target;
+		var fragment, renderIndex, renderedFragments, anchor, target, i, len;
+		// `this.renderedFragments` is in the order of the previous render.
+		// If fragments have shuffled about, this allows us to quickly
+		// reinsert them in the correct place
+		renderedFragments = this.renderedFragments;
+		// Remove fragments that have been marked for destruction
 		while ( fragment = this.fragmentsToUnrender.pop() ) {
 			fragment.unrender( true );
+			renderedFragments.splice( renderedFragments.indexOf( fragment ), 1 );
 		}
-		// If we have no new nodes to insert (i.e. the section length stayed the
-		// same, or shrank), we don't need to go any further
-		if ( !this.fragmentsToRender.length ) {
-			return;
+		// Render new fragments (but don't insert them yet)
+		while ( fragment = this.fragmentsToRender.shift() ) {
+			fragment.render();
 		}
 		if ( this.rendered ) {
 			target = this.parentFragment.getNode();
 		}
-		// Render new fragments to our docFrag
-		while ( fragment = this.fragmentsToRender.shift() ) {
-			rendered = fragment.render();
-			this.docFrag.appendChild( rendered );
-			// If this is an ordered list, and it's already rendered, we may
-			// need to insert content into the appropriate place
-			if ( this.rendered && this.ordered ) {
-				// If the next fragment is already rendered, use it as an anchor...
-				nextFragment = this.fragments[ fragment.index + 1 ];
-				if ( nextFragment && nextFragment.rendered ) {
-					target.insertBefore( this.docFrag, nextFragment.firstNode() || null );
+		len = this.fragments.length;
+		for ( i = 0; i < len; i += 1 ) {
+			fragment = this.fragments[ i ];
+			renderIndex = renderedFragments.indexOf( fragment, i );
+			// search from current index - it's guaranteed to be the same or higher
+			if ( renderIndex === i ) {
+				// already in the right place. insert accumulated nodes (if any) and carry on
+				if ( this.docFrag.childNodes.length ) {
+					anchor = fragment.firstNode();
+					target.insertBefore( this.docFrag, anchor );
 				}
+				continue;
 			}
+			this.docFrag.appendChild( fragment.detach() );
+			// update renderedFragments
+			if ( renderIndex !== -1 ) {
+				renderedFragments.splice( renderIndex, 1 );
+			}
+			renderedFragments.splice( i, 0, fragment );
 		}
 		if ( this.rendered && this.docFrag.childNodes.length ) {
 			anchor = this.parentFragment.findNextNode( this );
 			target.insertBefore( this.docFrag, anchor );
 		}
+		// Save the rendering order for next time
+		this.renderedFragments = this.fragments.slice();
 	};
 
 	/* virtualdom/items/Section/_Section.js */
-	var Section = function( types, Mustache, bubble, detach, find, findAll, findAllComponents, findComponent, findNextNode, firstNode, merge, render, setValue, splice, toString, unbind, unrender, update ) {
+	var Section = function( types, Mustache, bubble, detach, find, findAll, findAllComponents, findComponent, findNextNode, firstNode, shuffle, render, setValue, toString, unbind, unrender, update ) {
 
 		var Section = function( options ) {
 			this.type = types.SECTION;
@@ -7588,6 +7726,7 @@ exports.unbind = function(el, type, fn, capture){
 			this.fragmentsToCreate = [];
 			this.fragmentsToRender = [];
 			this.fragmentsToUnrender = [];
+			this.renderedFragments = [];
 			this.length = 0;
 			// number of times this section is rendered
 			Mustache.init( this, options );
@@ -7602,19 +7741,18 @@ exports.unbind = function(el, type, fn, capture){
 			findNextNode: findNextNode,
 			firstNode: firstNode,
 			getValue: Mustache.getValue,
-			merge: merge,
+			shuffle: shuffle,
 			rebind: Mustache.rebind,
 			render: render,
 			resolve: Mustache.resolve,
 			setValue: setValue,
-			splice: splice,
 			toString: toString,
 			unbind: unbind,
 			unrender: unrender,
 			update: update
 		};
 		return Section;
-	}( types, Mustache, virtualdom_items_Section$bubble, virtualdom_items_Section$detach, virtualdom_items_Section$find, virtualdom_items_Section$findAll, virtualdom_items_Section$findAllComponents, virtualdom_items_Section$findComponent, virtualdom_items_Section$findNextNode, virtualdom_items_Section$firstNode, virtualdom_items_Section$merge, virtualdom_items_Section$render, virtualdom_items_Section$setValue, virtualdom_items_Section$splice, virtualdom_items_Section$toString, virtualdom_items_Section$unbind, virtualdom_items_Section$unrender, virtualdom_items_Section$update );
+	}( types, Mustache, virtualdom_items_Section$bubble, virtualdom_items_Section$detach, virtualdom_items_Section$find, virtualdom_items_Section$findAll, virtualdom_items_Section$findAllComponents, virtualdom_items_Section$findComponent, virtualdom_items_Section$findNextNode, virtualdom_items_Section$firstNode, virtualdom_items_Section$shuffle, virtualdom_items_Section$render, virtualdom_items_Section$setValue, virtualdom_items_Section$toString, virtualdom_items_Section$unbind, virtualdom_items_Section$unrender, virtualdom_items_Section$update );
 
 	/* virtualdom/items/Triple/prototype/detach.js */
 	var virtualdom_items_Triple$detach = function Triple$detach() {
@@ -7685,6 +7823,7 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/items/Triple/helpers/insertHtml.js */
 	var insertHtml = function( namespaces, createElement ) {
 
+		var __export;
 		var elementCache = {},
 			ieBug, ieBlacklist;
 		try {
@@ -7714,10 +7853,11 @@ exports.unbind = function(el, type, fn, capture){
 				]
 			};
 		}
-		return function( html, node, docFrag ) {
+		__export = function( html, node, docFrag ) {
 			var container, nodes = [],
 				wrapper, selectedOption, child, i;
-			if ( html ) {
+			// render 0 and false
+			if ( html != null && html !== '' ) {
 				if ( ieBug && ( wrapper = ieBlacklist[ node.tagName ] ) ) {
 					container = element( 'DIV' );
 					container.innerHTML = wrapper[ 0 ] + html + wrapper[ 1 ];
@@ -7732,6 +7872,9 @@ exports.unbind = function(el, type, fn, capture){
 				} else {
 					container = element( node.tagName );
 					container.innerHTML = html;
+					if ( container.tagName === 'SELECT' ) {
+						selectedOption = container.options[ container.selectedIndex ];
+					}
 				}
 				while ( child = container.firstChild ) {
 					nodes.push( child );
@@ -7741,7 +7884,8 @@ exports.unbind = function(el, type, fn, capture){
 				// temporary container <select> causes the remaining ones to
 				// become selected. So now we have to deselect them. IE8, you
 				// amaze me. You really do
-				if ( ieBug && node.tagName === 'SELECT' ) {
+				// ...and now Chrome too
+				if ( node.tagName === 'SELECT' ) {
 					i = nodes.length;
 					while ( i-- ) {
 						if ( nodes[ i ] !== selectedOption ) {
@@ -7756,6 +7900,7 @@ exports.unbind = function(el, type, fn, capture){
 		function element( tagName ) {
 			return elementCache[ tagName ] || ( elementCache[ tagName ] = createElement( tagName ) );
 		}
+		return __export;
 	}( namespaces, createElement );
 
 	/* utils/toArray.js */
@@ -7771,7 +7916,8 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/items/Triple/helpers/updateSelect.js */
 	var updateSelect = function( toArray ) {
 
-		return function updateSelect( parentElement ) {
+		var __export;
+		__export = function updateSelect( parentElement ) {
 			var selectedOptions, option, value;
 			if ( !parentElement || parentElement.name !== 'select' || !parentElement.binding ) {
 				return;
@@ -7795,6 +7941,7 @@ exports.unbind = function(el, type, fn, capture){
 		function isSelected( option ) {
 			return option.selected;
 		}
+		return __export;
 	}( toArray );
 
 	/* virtualdom/items/Triple/prototype/render.js */
@@ -7833,9 +7980,12 @@ exports.unbind = function(el, type, fn, capture){
 	}( runloop );
 
 	/* virtualdom/items/Triple/prototype/toString.js */
-	var virtualdom_items_Triple$toString = function Triple$toString() {
-		return this.value != undefined ? this.value : '';
-	};
+	var virtualdom_items_Triple$toString = function( decodeCharacterReferences ) {
+
+		return function Triple$toString() {
+			return this.value != undefined ? decodeCharacterReferences( '' + this.value ) : '';
+		};
+	}( decodeCharacterReferences );
 
 	/* virtualdom/items/Triple/prototype/unrender.js */
 	var virtualdom_items_Triple$unrender = function( detachNode ) {
@@ -7993,13 +8143,17 @@ exports.unbind = function(el, type, fn, capture){
 	}();
 
 	/* virtualdom/items/Element/Attribute/prototype/bubble.js */
-	var virtualdom_items_Element_Attribute$bubble = function( runloop ) {
+	var virtualdom_items_Element_Attribute$bubble = function( runloop, isEqual ) {
 
 		return function Attribute$bubble() {
 			var value = this.fragment.getValue();
 			// TODO this can register the attribute multiple times (see render test
 			// 'Attribute with nested mustaches')
-			if ( value !== this.value ) {
+			if ( !isEqual( value, this.value ) ) {
+				// Need to clear old id from ractive.nodes
+				if ( this.name === 'id' && this.value ) {
+					delete this.root.nodes[ this.value ];
+				}
 				this.value = value;
 				if ( this.name === 'value' && this.node ) {
 					// We need to store the value on the DOM like this so we
@@ -8011,7 +8165,15 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			}
 		};
-	}( runloop );
+	}( runloop, isEqual );
+
+	/* config/booleanAttributes.js */
+	var booleanAttributes = function() {
+
+		// https://github.com/kangax/html-minifier/issues/63#issuecomment-37763316
+		var booleanAttributes = /^(allowFullscreen|async|autofocus|autoplay|checked|compact|controls|declare|default|defaultChecked|defaultMuted|defaultSelected|defer|disabled|draggable|enabled|formNoValidate|hidden|indeterminate|inert|isMap|itemScope|loop|multiple|muted|noHref|noResize|noShade|noValidate|noWrap|open|pauseOnExit|readOnly|required|reversed|scoped|seamless|selected|sortable|translate|trueSpeed|typeMustMatch|visible)$/i;
+		return booleanAttributes;
+	}();
 
 	/* virtualdom/items/Element/Attribute/helpers/determineNameAndNamespace.js */
 	var determineNameAndNamespace = function( namespaces, enforceCase ) {
@@ -8029,6 +8191,7 @@ exports.unbind = function(el, type, fn, capture){
 					name = name.substring( colonIndex + 1 );
 					attribute.name = enforceCase( name );
 					attribute.namespace = namespaces[ namespacePrefix.toLowerCase() ];
+					attribute.namespacePrefix = namespacePrefix;
 					if ( !attribute.namespace ) {
 						throw 'Unknown namespace ("' + namespacePrefix + '")';
 					}
@@ -8055,10 +8218,8 @@ exports.unbind = function(el, type, fn, capture){
 	}( types );
 
 	/* virtualdom/items/Element/Attribute/helpers/determinePropertyName.js */
-	var determinePropertyName = function( namespaces ) {
+	var determinePropertyName = function( namespaces, booleanAttributes ) {
 
-		// the property name equivalents for element attributes, where they differ
-		// from the lowercased attribute name
 		var propertyNames = {
 			'accept-charset': 'acceptCharset',
 			accesskey: 'accessKey',
@@ -8089,15 +8250,15 @@ exports.unbind = function(el, type, fn, capture){
 				}
 				// is attribute a boolean attribute or 'value'? If so we're better off doing e.g.
 				// node.selected = true rather than node.setAttribute( 'selected', '' )
-				if ( typeof options.pNode[ propertyName ] === 'boolean' || propertyName === 'value' ) {
+				if ( booleanAttributes.test( propertyName ) || propertyName === 'value' ) {
 					attribute.useProperty = true;
 				}
 			}
 		};
-	}( namespaces );
+	}( namespaces, booleanAttributes );
 
 	/* virtualdom/items/Element/Attribute/prototype/init.js */
-	var virtualdom_items_Element_Attribute$init = function( types, determineNameAndNamespace, getInterpolator, determinePropertyName, circular ) {
+	var virtualdom_items_Element_Attribute$init = function( types, booleanAttributes, determineNameAndNamespace, getInterpolator, determinePropertyName, circular ) {
 
 		var Fragment;
 		circular.push( function() {
@@ -8111,7 +8272,7 @@ exports.unbind = function(el, type, fn, capture){
 			// if it's an empty attribute, or just a straight key-value pair, with no
 			// mustache shenanigans, set the attribute accordingly and go home
 			if ( !options.value || typeof options.value === 'string' ) {
-				this.value = options.value || true;
+				this.value = booleanAttributes.test( this.name ) ? true : options.value || '';
 				return;
 			}
 			// otherwise we need to do some work
@@ -8127,13 +8288,13 @@ exports.unbind = function(el, type, fn, capture){
 			// takes the form `{{foo}}`. This is necessary for two-way binding and
 			// for correctly rendering HTML later
 			this.interpolator = getInterpolator( this );
-			this.isBindable = !!this.interpolator;
+			this.isBindable = !!this.interpolator && !this.interpolator.isStatic;
 			// can we establish this attribute's property name equivalent?
 			determinePropertyName( this, options );
 			// mark as ready
 			this.ready = true;
 		};
-	}( types, determineNameAndNamespace, getInterpolator, determinePropertyName, circular );
+	}( types, booleanAttributes, determineNameAndNamespace, getInterpolator, determinePropertyName, circular );
 
 	/* virtualdom/items/Element/Attribute/prototype/rebind.js */
 	var virtualdom_items_Element_Attribute$rebind = function Attribute$rebind( indexRef, newIndex, oldKeypath, newKeypath ) {
@@ -8143,10 +8304,8 @@ exports.unbind = function(el, type, fn, capture){
 	};
 
 	/* virtualdom/items/Element/Attribute/prototype/render.js */
-	var virtualdom_items_Element_Attribute$render = function( namespaces ) {
+	var virtualdom_items_Element_Attribute$render = function( namespaces, booleanAttributes ) {
 
-		// the property name equivalents for element attributes, where they differ
-		// from the lowercased attribute name
 		var propertyNames = {
 			'accept-charset': 'acceptCharset',
 			'accesskey': 'accessKey',
@@ -8179,7 +8338,7 @@ exports.unbind = function(el, type, fn, capture){
 				}
 				// is attribute a boolean attribute or 'value'? If so we're better off doing e.g.
 				// node.selected = true rather than node.setAttribute( 'selected', '' )
-				if ( typeof node[ propertyName ] === 'boolean' || propertyName === 'value' ) {
+				if ( booleanAttributes.test( propertyName ) || propertyName === 'value' ) {
 					this.useProperty = true;
 				}
 				if ( propertyName === 'value' ) {
@@ -8190,45 +8349,57 @@ exports.unbind = function(el, type, fn, capture){
 			this.rendered = true;
 			this.update();
 		};
-	}( namespaces );
+	}( namespaces, booleanAttributes );
 
 	/* virtualdom/items/Element/Attribute/prototype/toString.js */
-	var virtualdom_items_Element_Attribute$toString = function() {
+	var virtualdom_items_Element_Attribute$toString = function( booleanAttributes ) {
 
-		return function Attribute$toString() {
-			var name, value, interpolator;
-			name = this.name;
-			value = this.value;
-			// Special case - select values (should not be stringified)
-			if ( name === 'value' && this.element.name === 'select' ) {
+		var __export;
+		__export = function Attribute$toString() {
+			var name = ( fragment = this ).name,
+				namespacePrefix = fragment.namespacePrefix,
+				value = fragment.value,
+				interpolator = fragment.interpolator,
+				fragment = fragment.fragment;
+			// Special case - select and textarea values (should not be stringified)
+			if ( name === 'value' && ( this.element.name === 'select' || this.element.name === 'textarea' ) ) {
+				return;
+			}
+			// Special case - content editable
+			if ( name === 'value' && this.element.getAttribute( 'contenteditable' ) !== undefined ) {
 				return;
 			}
 			// Special case - radio names
-			if ( name === 'name' && this.element.name === 'input' && ( interpolator = this.interpolator ) ) {
+			if ( name === 'name' && this.element.name === 'input' && interpolator ) {
 				return 'name={{' + ( interpolator.keypath || interpolator.ref ) + '}}';
 			}
-			// Numbers
-			if ( typeof value === 'number' ) {
-				return name + '="' + value + '"';
+			// Boolean attributes
+			if ( booleanAttributes.test( name ) ) {
+				return value ? name : '';
 			}
-			// Strings
-			if ( typeof value === 'string' ) {
-				return name + '="' + escape( value ) + '"';
+			if ( fragment ) {
+				value = fragment.toString();
 			}
-			// Everything else
-			return value ? name : '';
+			if ( namespacePrefix ) {
+				name = namespacePrefix + ':' + name;
+			}
+			return value ? name + '="' + escape( value ) + '"' : name;
 		};
 
 		function escape( value ) {
 			return value.replace( /&/g, '&amp;' ).replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
 		}
-	}();
+		return __export;
+	}( booleanAttributes );
 
 	/* virtualdom/items/Element/Attribute/prototype/unbind.js */
 	var virtualdom_items_Element_Attribute$unbind = function Attribute$unbind() {
 		// ignore non-dynamic attributes
 		if ( this.fragment ) {
 			this.fragment.unbind();
+		}
+		if ( this.name === 'id' ) {
+			delete this.root.nodes[ this.value ];
 		}
 	};
 
@@ -8253,8 +8424,18 @@ exports.unbind = function(el, type, fn, capture){
 		}
 	};
 
+	/* utils/arrayContains.js */
+	var arrayContains = function arrayContains( array, value ) {
+		for ( var i = 0, c = array.length; i < c; i++ ) {
+			if ( array[ i ] == value ) {
+				return true;
+			}
+		}
+		return false;
+	};
+
 	/* virtualdom/items/Element/Attribute/prototype/update/updateMultipleSelectValue.js */
-	var virtualdom_items_Element_Attribute$update_updateMultipleSelectValue = function( isArray ) {
+	var virtualdom_items_Element_Attribute$update_updateMultipleSelectValue = function( arrayContains, isArray ) {
 
 		return function Attribute$updateMultipleSelect() {
 			var value = this.value,
@@ -8268,10 +8449,10 @@ exports.unbind = function(el, type, fn, capture){
 				option = options[ i ];
 				optionValue = option._ractive ? option._ractive.value : option.value;
 				// options inserted via a triple don't have _ractive
-				option.selected = value.indexOf( optionValue ) !== -1;
+				option.selected = arrayContains( value, optionValue );
 			}
 		};
-	}( isArray );
+	}( arrayContains, isArray );
 
 	/* virtualdom/items/Element/Attribute/prototype/update/updateRadioName.js */
 	var virtualdom_items_Element_Attribute$update_updateRadioName = function Attribute$updateRadioName() {
@@ -8319,13 +8500,22 @@ exports.unbind = function(el, type, fn, capture){
 	var virtualdom_items_Element_Attribute$update_updateCheckboxName = function( isArray ) {
 
 		return function Attribute$updateCheckboxName() {
-			var node, value;
-			node = this.node;
-			value = this.value;
+			var element = ( value = this ).element,
+				node = value.node,
+				value = value.value,
+				valueAttribute, i;
+			valueAttribute = element.getAttribute( 'value' );
 			if ( !isArray( value ) ) {
-				node.checked = value == node._ractive.value;
+				node.checked = value == valueAttribute;
 			} else {
-				node.checked = value.indexOf( node._ractive.value ) !== -1;
+				i = value.length;
+				while ( i-- ) {
+					if ( valueAttribute == value[ i ] ) {
+						node.checked = true;
+						return;
+					}
+				}
+				node.checked = false;
 			}
 		};
 	}( isArray );
@@ -8343,12 +8533,8 @@ exports.unbind = function(el, type, fn, capture){
 
 	/* virtualdom/items/Element/Attribute/prototype/update/updateIdAttribute.js */
 	var virtualdom_items_Element_Attribute$update_updateIdAttribute = function Attribute$updateIdAttribute() {
-		var node, value;
-		node = this.node;
-		value = this.value;
-		if ( value !== undefined ) {
-			this.root.nodes[ value ] = undefined;
-		}
+		var node = ( value = this ).node,
+			value = value.value;
 		this.root.nodes[ value ] = node;
 		node.id = value;
 	};
@@ -8366,22 +8552,19 @@ exports.unbind = function(el, type, fn, capture){
 
 	/* virtualdom/items/Element/Attribute/prototype/update/updateContentEditableValue.js */
 	var virtualdom_items_Element_Attribute$update_updateContentEditableValue = function Attribute$updateContentEditableValue() {
-		var node, value;
-		node = this.node;
-		value = this.value;
+		var value = this.value;
 		if ( value === undefined ) {
 			value = '';
 		}
 		if ( !this.locked ) {
-			node.innerHTML = value;
+			this.node.innerHTML = value;
 		}
 	};
 
 	/* virtualdom/items/Element/Attribute/prototype/update/updateValue.js */
 	var virtualdom_items_Element_Attribute$update_updateValue = function Attribute$updateValue() {
-		var node, value;
-		node = this.node;
-		value = this.value;
+		var node = ( value = this ).node,
+			value = value.value;
 		// store actual value, so it doesn't get coerced to a string
 		node._ractive.value = value;
 		// with two-way binding, only update if the change wasn't initiated by the user
@@ -8401,45 +8584,45 @@ exports.unbind = function(el, type, fn, capture){
 	};
 
 	/* virtualdom/items/Element/Attribute/prototype/update/updateEverythingElse.js */
-	var virtualdom_items_Element_Attribute$update_updateEverythingElse = function Attribute$updateEverythingElse() {
-		var node, name, value;
-		node = this.node;
-		name = this.name;
-		value = this.value;
-		if ( this.namespace ) {
-			node.setAttributeNS( this.namespace, name, value );
-		} else if ( typeof value === 'string' || typeof value === 'number' ) {
-			node.setAttribute( name, value );
-		} else {
-			if ( value ) {
-				node.setAttribute( name, '' );
+	var virtualdom_items_Element_Attribute$update_updateEverythingElse = function( booleanAttributes ) {
+
+		return function Attribute$updateEverythingElse() {
+			var node = ( fragment = this ).node,
+				namespace = fragment.namespace,
+				name = fragment.name,
+				value = fragment.value,
+				fragment = fragment.fragment;
+			if ( namespace ) {
+				node.setAttributeNS( namespace, name, ( fragment || value ).toString() );
+			} else if ( !booleanAttributes.test( name ) ) {
+				node.setAttribute( name, ( fragment || value ).toString() );
 			} else {
-				node.removeAttribute( name );
+				if ( value ) {
+					node.setAttribute( name, '' );
+				} else {
+					node.removeAttribute( name );
+				}
 			}
-		}
-	};
+		};
+	}( booleanAttributes );
 
 	/* virtualdom/items/Element/Attribute/prototype/update.js */
 	var virtualdom_items_Element_Attribute$update = function( namespaces, noop, updateSelectValue, updateMultipleSelectValue, updateRadioName, updateRadioValue, updateCheckboxName, updateClassName, updateIdAttribute, updateIEStyleAttribute, updateContentEditableValue, updateValue, updateBoolean, updateEverythingElse ) {
 
-		// There are a few special cases when it comes to updating attributes. For this reason,
-		// the prototype .update() method points to this method, which waits until the
-		// attribute has finished initialising, then replaces the prototype method with a more
-		// suitable one. That way, we save ourselves doing a bunch of tests on each call
 		return function Attribute$update() {
-			var name, element, node, type, updateMethod;
-			name = this.name;
-			element = this.element;
-			node = this.node;
+			var name = ( node = this ).name,
+				element = node.element,
+				node = node.node,
+				type, updateMethod;
 			if ( name === 'id' ) {
 				updateMethod = updateIdAttribute;
 			} else if ( name === 'value' ) {
 				// special case - selects
 				if ( element.name === 'select' && name === 'value' ) {
-					updateMethod = node.multiple ? updateMultipleSelectValue : updateSelectValue;
+					updateMethod = element.getAttribute( 'multiple' ) ? updateMultipleSelectValue : updateSelectValue;
 				} else if ( element.name === 'textarea' ) {
 					updateMethod = updateValue;
-				} else if ( node.getAttribute( 'contenteditable' ) ) {
+				} else if ( element.getAttribute( 'contenteditable' ) != null ) {
 					updateMethod = updateContentEditableValue;
 				} else if ( element.name === 'input' ) {
 					type = element.getAttribute( 'type' );
@@ -8511,6 +8694,100 @@ exports.unbind = function(el, type, fn, capture){
 		};
 	}( Attribute );
 
+	/* virtualdom/items/Element/ConditionalAttribute/_ConditionalAttribute.js */
+	var ConditionalAttribute = function( circular, namespaces, createElement, toArray ) {
+
+		var __export;
+		var Fragment, div;
+		if ( typeof document !== 'undefined' ) {
+			div = createElement( 'div' );
+		}
+		circular.push( function() {
+			Fragment = circular.Fragment;
+		} );
+		var ConditionalAttribute = function( element, template ) {
+			this.element = element;
+			this.root = element.root;
+			this.parentFragment = element.parentFragment;
+			this.attributes = [];
+			this.fragment = new Fragment( {
+				root: element.root,
+				owner: this,
+				template: [ template ]
+			} );
+		};
+		ConditionalAttribute.prototype = {
+			bubble: function() {
+				if ( this.node ) {
+					this.update();
+				}
+				this.element.bubble();
+			},
+			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
+				this.fragment.rebind( indexRef, newIndex, oldKeypath, newKeypath );
+			},
+			render: function( node ) {
+				this.node = node;
+				this.isSvg = node.namespaceURI === namespaces.svg;
+				this.update();
+			},
+			unbind: function() {
+				this.fragment.unbind();
+			},
+			update: function() {
+				var this$0 = this;
+				var str, attrs;
+				str = this.fragment.toString();
+				attrs = parseAttributes( str, this.isSvg );
+				// any attributes that previously existed but no longer do
+				// must be removed
+				this.attributes.filter( function( a ) {
+					return notIn( attrs, a );
+				} ).forEach( function( a ) {
+					this$0.node.removeAttribute( a.name );
+				} );
+				attrs.forEach( function( a ) {
+					this$0.node.setAttribute( a.name, a.value );
+				} );
+				this.attributes = attrs;
+			},
+			toString: function() {
+				return this.fragment.toString();
+			}
+		};
+		__export = ConditionalAttribute;
+
+		function parseAttributes( str, isSvg ) {
+			var tag = isSvg ? 'svg' : 'div';
+			div.innerHTML = '<' + tag + ' ' + str + '></' + tag + '>';
+			return toArray( div.childNodes[ 0 ].attributes );
+		}
+
+		function notIn( haystack, needle ) {
+			var i = haystack.length;
+			while ( i-- ) {
+				if ( haystack[ i ].name === needle.name ) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return __export;
+	}( circular, namespaces, createElement, toArray );
+
+	/* virtualdom/items/Element/prototype/init/createConditionalAttributes.js */
+	var virtualdom_items_Element$init_createConditionalAttributes = function( ConditionalAttribute ) {
+
+		return function( element, attributes ) {
+			if ( !attributes ) {
+				return [];
+			}
+			return attributes.map( function( a ) {
+				return new ConditionalAttribute( element, a );
+			} );
+		};
+	}( ConditionalAttribute );
+
 	/* utils/extend.js */
 	var extend = function( target ) {
 		var SLICE$0 = Array.prototype.slice;
@@ -8536,8 +8813,8 @@ exports.unbind = function(el, type, fn, capture){
 			this.attribute = element.attributes[ this.name || 'value' ];
 			interpolator = this.attribute.interpolator;
 			interpolator.twowayBinding = this;
-			if ( interpolator.keypath && interpolator.keypath.substr === '${' ) {
-				warn( 'Two-way binding does not work with expressions: ' + interpolator.keypath );
+			if ( interpolator.keypath && interpolator.keypath.substr( 0, 2 ) === '${' ) {
+				warn( 'Two-way binding does not work with expressions (`' + interpolator.keypath.slice( 2, -1 ) + '`)' );
 				return false;
 			}
 			// A mustache may be *ambiguous*. Let's say we were given
@@ -8555,14 +8832,7 @@ exports.unbind = function(el, type, fn, capture){
 			// be explicit when using two-way data-binding about what keypath you're
 			// updating. Using it in lists is probably a recipe for confusion...
 			if ( !interpolator.keypath ) {
-				if ( interpolator.ref ) {
-					interpolator.resolve( interpolator.ref );
-				}
-				// If we have a reference expression resolver, we have to force
-				// members to attach themselves to the root
-				if ( interpolator.resolver ) {
-					interpolator.resolver.forceResolution();
-				}
+				interpolator.resolver.forceResolution();
 			}
 			this.keypath = keypath = interpolator.keypath;
 			// initialise value, if it's undefined
@@ -8756,7 +9026,7 @@ exports.unbind = function(el, type, fn, capture){
 	}( removeFromArray, Binding, handleDomEvent, getSiblings );
 
 	/* virtualdom/items/Element/Binding/CheckboxNameBinding.js */
-	var CheckboxNameBinding = function( isArray, removeFromArray, Binding, getSiblings, handleDomEvent ) {
+	var CheckboxNameBinding = function( isArray, arrayContains, removeFromArray, Binding, getSiblings, handleDomEvent ) {
 
 		var CheckboxNameBinding = Binding.extend( {
 			name: 'name',
@@ -8772,9 +9042,11 @@ exports.unbind = function(el, type, fn, capture){
 				return [];
 			},
 			init: function() {
-				var existingValue, bindingValue, noInitialValue;
+				var existingValue, bindingValue;
 				this.checkboxName = true;
 				// so that ractive.updateModel() knows what to do with this
+				this.attribute.twoway = true;
+				// we set this property so that the attribute gets the correct update method
 				// Each input has a reference to an array containing it and its
 				// siblings, as two-way binding depends on being able to ascertain
 				// the status of all inputs within the group
@@ -8783,23 +9055,27 @@ exports.unbind = function(el, type, fn, capture){
 				if ( this.noInitialValue ) {
 					this.siblings.noInitialValue = true;
 				}
-				noInitialValue = this.siblings.noInitialValue;
-				existingValue = this.root.viewmodel.get( this.keypath );
-				bindingValue = this.element.getAttribute( 'value' );
-				if ( noInitialValue ) {
-					this.isChecked = this.element.getAttribute( 'checked' );
-					if ( this.isChecked ) {
-						existingValue.push( bindingValue );
-					}
-				} else {
-					this.isChecked = isArray( existingValue ) ? existingValue.indexOf( bindingValue ) !== -1 : existingValue === bindingValue;
+				// If no initial value was set, and this input is checked, we
+				// update the model
+				if ( this.siblings.noInitialValue && this.element.getAttribute( 'checked' ) ) {
+					existingValue = this.root.viewmodel.get( this.keypath );
+					bindingValue = this.element.getAttribute( 'value' );
+					existingValue.push( bindingValue );
 				}
 			},
 			unbind: function() {
 				removeFromArray( this.siblings, this );
 			},
 			render: function() {
-				var node = this.element.node;
+				var node = this.element.node,
+					existingValue, bindingValue;
+				existingValue = this.root.viewmodel.get( this.keypath );
+				bindingValue = this.element.getAttribute( 'value' );
+				if ( isArray( existingValue ) ) {
+					this.isChecked = arrayContains( existingValue, bindingValue );
+				} else {
+					this.isChecked = existingValue == bindingValue;
+				}
 				node.name = '{{' + this.keypath + '}}';
 				node.checked = this.isChecked;
 				node.addEventListener( 'change', handleDomEvent, false );
@@ -8835,7 +9111,7 @@ exports.unbind = function(el, type, fn, capture){
 			return binding.element.getAttribute( 'value' );
 		}
 		return CheckboxNameBinding;
-	}( isArray, removeFromArray, Binding, getSiblings, handleDomEvent );
+	}( isArray, arrayContains, removeFromArray, Binding, getSiblings, handleDomEvent );
 
 	/* virtualdom/items/Element/Binding/CheckboxBinding.js */
 	var CheckboxBinding = function( Binding, handleDomEvent ) {
@@ -8867,7 +9143,10 @@ exports.unbind = function(el, type, fn, capture){
 		var SelectBinding = Binding.extend( {
 			getInitialValue: function() {
 				var options = this.element.options,
-					len, i;
+					len, i, value, optionWasSelected;
+				if ( this.element.getAttribute( 'value' ) !== undefined ) {
+					return;
+				}
 				i = len = options.length;
 				if ( !len ) {
 					return;
@@ -8875,15 +9154,26 @@ exports.unbind = function(el, type, fn, capture){
 				// take the final selected option...
 				while ( i-- ) {
 					if ( options[ i ].getAttribute( 'selected' ) ) {
-						return options[ i ].getAttribute( 'value' );
+						value = options[ i ].getAttribute( 'value' );
+						optionWasSelected = true;
+						break;
 					}
 				}
 				// or the first non-disabled option, if none are selected
-				while ( ++i < len ) {
-					if ( !options[ i ].getAttribute( 'disabled' ) ) {
-						return options[ i ].getAttribute( 'value' );
+				if ( !optionWasSelected ) {
+					while ( ++i < len ) {
+						if ( !options[ i ].getAttribute( 'disabled' ) ) {
+							value = options[ i ].getAttribute( 'value' );
+							break;
+						}
 					}
 				}
+				// This is an optimisation (aka hack) that allows us to forgo some
+				// other more expensive work
+				if ( value !== undefined ) {
+					this.element.attributes.value.value = value;
+				}
+				return value;
 			},
 			render: function() {
 				this.element.node.addEventListener( 'change', handleDomEvent, false );
@@ -9036,6 +9326,7 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/items/Element/Binding/GenericBinding.js */
 	var GenericBinding = function( Binding, handleDomEvent ) {
 
+		var __export;
 		var GenericBinding, getOptions;
 		getOptions = {
 			evaluateWrapped: true
@@ -9066,7 +9357,7 @@ exports.unbind = function(el, type, fn, capture){
 				node.removeEventListener( 'blur', handleBlur, false );
 			}
 		} );
-		return GenericBinding;
+		__export = GenericBinding;
 
 		function handleBlur() {
 			var value;
@@ -9074,6 +9365,7 @@ exports.unbind = function(el, type, fn, capture){
 			value = this._ractive.root.viewmodel.get( this._ractive.binding.keypath, getOptions );
 			this.value = value == undefined ? '' : value;
 		}
+		return __export;
 	}( Binding, handleDomEvent );
 
 	/* virtualdom/items/Element/Binding/NumericBinding.js */
@@ -9093,7 +9385,8 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/items/Element/prototype/init/createTwowayBinding.js */
 	var virtualdom_items_Element$init_createTwowayBinding = function( log, ContentEditableBinding, RadioBinding, RadioNameBinding, CheckboxNameBinding, CheckboxBinding, SelectBinding, MultipleSelectBinding, FileListBinding, NumericBinding, GenericBinding ) {
 
-		return function createTwowayBinding( element ) {
+		var __export;
+		__export = function createTwowayBinding( element ) {
 			var attributes = element.attributes,
 				type, Binding, bindName, bindChecked;
 			// if this is a late binding, and there's already one, it
@@ -9103,7 +9396,8 @@ exports.unbind = function(el, type, fn, capture){
 				element.binding = null;
 			}
 			// contenteditable
-			if ( element.getAttribute( 'contenteditable' ) && isBindable( attributes.value ) ) {
+			if ( // if the contenteditable attribute is true or is bindable and may thus become true
+				( element.getAttribute( 'contenteditable' ) || !!attributes.contenteditable && isBindable( attributes.contenteditable ) ) && isBindable( attributes.value ) ) {
 				Binding = ContentEditableBinding;
 			} else if ( element.name === 'input' ) {
 				type = element.getAttribute( 'type' );
@@ -9139,57 +9433,148 @@ exports.unbind = function(el, type, fn, capture){
 		function isBindable( attribute ) {
 			return attribute && attribute.isBindable;
 		}
+		return __export;
 	}( log, ContentEditableBinding, RadioBinding, RadioNameBinding, CheckboxNameBinding, CheckboxBinding, SelectBinding, MultipleSelectBinding, FileListBinding, NumericBinding, GenericBinding );
 
+	/* virtualdom/items/Element/EventHandler/prototype/bubble.js */
+	var virtualdom_items_Element_EventHandler$bubble = function EventHandler$bubble() {
+		var hasAction = this.getAction();
+		if ( hasAction && !this.hasListener ) {
+			this.listen();
+		} else if ( !hasAction && this.hasListener ) {
+			this.unrender();
+		}
+	};
+
 	/* virtualdom/items/Element/EventHandler/prototype/fire.js */
-	var virtualdom_items_Element_EventHandler$fire = function EventHandler$fire( event ) {
-		this.root.fire( this.action.toString().trim(), event );
+	var virtualdom_items_Element_EventHandler$fire = function( fireEvent ) {
+
+		return function EventHandler$fire( event ) {
+			fireEvent( this.root, this.getAction(), {
+				event: event
+			} );
+		};
+	}( Ractive$shared_fireEvent );
+
+	/* virtualdom/items/Element/EventHandler/prototype/getAction.js */
+	var virtualdom_items_Element_EventHandler$getAction = function EventHandler$getAction() {
+		return this.action.toString().trim();
 	};
 
 	/* virtualdom/items/Element/EventHandler/prototype/init.js */
-	var virtualdom_items_Element_EventHandler$init = function( circular ) {
+	var virtualdom_items_Element_EventHandler$init = function( getFunctionFromString, createReferenceResolver, circular, fireEvent, log ) {
 
+		var __export;
 		var Fragment, getValueOptions = {
-			args: true
-		};
+				args: true
+			},
+			eventPattern = /^event(?:\.(.+))?/;
 		circular.push( function() {
 			Fragment = circular.Fragment;
 		} );
-		return function EventHandler$init( element, name, template ) {
-			var action;
-			this.element = element;
-			this.root = element.root;
-			this.name = name;
-			this.proxies = [];
-			// Get action ('foo' in 'on-click='foo')
-			action = template.n || template;
-			if ( typeof action !== 'string' ) {
-				action = new Fragment( {
-					template: action,
-					root: this.root,
-					owner: this.element
+		__export = function EventHandler$init( element, name, template ) {
+			var handler = this,
+				action, refs, ractive;
+			handler.element = element;
+			handler.root = element.root;
+			handler.name = name;
+			if ( name.indexOf( '*' ) !== -1 ) {
+				log.error( {
+					debug: this.root.debug,
+					message: 'noElementProxyEventWildcards',
+					args: {
+						element: element.tagName,
+						event: name
+					}
 				} );
+				this.invalid = true;
 			}
-			this.action = action;
-			// Get parameters
-			if ( template.d ) {
-				this.dynamicParams = new Fragment( {
-					template: template.d,
-					root: this.root,
-					owner: this.element
+			if ( template.m ) {
+				refs = template.a.r;
+				// This is a method call
+				handler.method = template.m;
+				handler.keypaths = [];
+				handler.fn = getFunctionFromString( template.a.s, refs.length );
+				handler.parentFragment = element.parentFragment;
+				ractive = handler.root;
+				// Create resolvers for each reference
+				handler.refResolvers = refs.map( function( ref, i ) {
+					var match;
+					// special case - the `event` object
+					if ( match = eventPattern.exec( ref ) ) {
+						handler.keypaths[ i ] = {
+							eventObject: true,
+							refinements: match[ 1 ] ? match[ 1 ].split( '.' ) : []
+						};
+						return null;
+					}
+					return createReferenceResolver( handler, ref, function( keypath ) {
+						handler.resolve( i, keypath );
+					} );
 				} );
-				this.fire = fireEventWithDynamicParams;
-			} else if ( template.a ) {
-				this.params = template.a;
-				this.fire = fireEventWithParams;
+				this.fire = fireMethodCall;
+			} else {
+				// Get action ('foo' in 'on-click='foo')
+				action = template.n || template;
+				if ( typeof action !== 'string' ) {
+					action = new Fragment( {
+						template: action,
+						root: this.root,
+						owner: this
+					} );
+				}
+				this.action = action;
+				// Get parameters
+				if ( template.d ) {
+					this.dynamicParams = new Fragment( {
+						template: template.d,
+						root: this.root,
+						owner: this.element
+					} );
+					this.fire = fireEventWithDynamicParams;
+				} else if ( template.a ) {
+					this.params = template.a;
+					this.fire = fireEventWithParams;
+				}
 			}
 		};
 
+		function fireMethodCall( event ) {
+			var ractive, values, args;
+			ractive = this.root;
+			if ( typeof ractive[ this.method ] !== 'function' ) {
+				throw new Error( 'Attempted to call a non-existent method ("' + this.method + '")' );
+			}
+			values = this.keypaths.map( function( keypath ) {
+				var value, len, i;
+				if ( keypath === undefined ) {
+					// not yet resolved
+					return undefined;
+				}
+				// TODO the refinements stuff would be better handled at parse time
+				if ( keypath.eventObject ) {
+					value = event;
+					if ( len = keypath.refinements.length ) {
+						for ( i = 0; i < len; i += 1 ) {
+							value = value[ keypath.refinements[ i ] ];
+						}
+					}
+				} else {
+					value = ractive.viewmodel.get( keypath );
+				}
+				return value;
+			} );
+			ractive.event = event;
+			args = this.fn.apply( null, values );
+			ractive[ this.method ].apply( ractive, args );
+			delete ractive.event;
+		}
+
 		function fireEventWithParams( event ) {
-			this.root.fire.apply( this.root, [
-				this.action.toString().trim(),
-				event
-			].concat( this.params ) );
+			fireEvent( this.root, this.getAction(), {
+				event: event,
+				args: this.params
+			} );
 		}
 
 		function fireEventWithDynamicParams( event ) {
@@ -9198,22 +9583,13 @@ exports.unbind = function(el, type, fn, capture){
 			if ( typeof args === 'string' ) {
 				args = args.substr( 1, args.length - 2 );
 			}
-			this.root.fire.apply( this.root, [
-				this.action.toString().trim(),
-				event
-			].concat( args ) );
+			fireEvent( this.root, this.getAction(), {
+				event: event,
+				args: args
+			} );
 		}
-	}( circular );
-
-	/* virtualdom/items/Element/EventHandler/prototype/rebind.js */
-	var virtualdom_items_Element_EventHandler$rebind = function EventHandler$rebind( indexRef, newIndex, oldKeypath, newKeypath ) {
-		if ( typeof this.action !== 'string' ) {
-			this.action.rebind( indexRef, newIndex, oldKeypath, newKeypath );
-		}
-		if ( this.dynamicParams ) {
-			this.dynamicParams.rebind( indexRef, newIndex, oldKeypath, newKeypath );
-		}
-	};
+		return __export;
+	}( getFunctionFromString, createReferenceResolver, circular, Ractive$shared_fireEvent, log );
 
 	/* virtualdom/items/Element/EventHandler/shared/genericHandler.js */
 	var genericHandler = function genericHandler( event ) {
@@ -9229,26 +9605,45 @@ exports.unbind = function(el, type, fn, capture){
 		} );
 	};
 
-	/* virtualdom/items/Element/EventHandler/prototype/render.js */
-	var virtualdom_items_Element_EventHandler$render = function( warn, config, genericHandler ) {
+	/* virtualdom/items/Element/EventHandler/prototype/listen.js */
+	var virtualdom_items_Element_EventHandler$listen = function( config, genericHandler, log ) {
 
-		var customHandlers = {};
-		return function EventHandler$render() {
-			var name = this.name,
-				definition;
-			this.node = this.element.node;
+		var __export;
+		var customHandlers = {},
+			touchEvents = {
+				touchstart: true,
+				touchmove: true,
+				touchend: true,
+				touchcancel: true,
+				//not w3c, but supported in some browsers
+				touchleave: true
+			};
+		__export = function EventHandler$listen() {
+			var definition, name = this.name;
+			if ( this.invalid ) {
+				return;
+			}
 			if ( definition = config.registries.events.find( this.root, name ) ) {
 				this.custom = definition( this.node, getCustomHandler( name ) );
 			} else {
 				// Looks like we're dealing with a standard DOM event... but let's check
 				if ( !( 'on' + name in this.node ) && !( window && 'on' + name in window ) ) {
-					warn( 'Missing "' + this.name + '" event. You may need to download a plugin via http://docs.ractivejs.org/latest/plugins#events' );
+					// okay to use touch events if this browser doesn't support them
+					if ( !touchEvents[ name ] ) {
+						log.error( {
+							debug: this.root.debug,
+							message: 'missingPlugin',
+							args: {
+								plugin: 'event',
+								name: name
+							}
+						} );
+					}
+					return;
 				}
 				this.node.addEventListener( name, genericHandler, false );
 			}
-			// store this on the node itself, so it can be retrieved by a
-			// universal handler
-			this.node._ractive.events[ name ] = this;
+			this.hasListener = true;
 		};
 
 		function getCustomHandler( name ) {
@@ -9263,19 +9658,69 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return customHandlers[ name ];
 		}
-	}( warn, config, genericHandler );
+		return __export;
+	}( config, genericHandler, log );
 
-	/* virtualdom/items/Element/EventHandler/prototype/teardown.js */
-	var virtualdom_items_Element_EventHandler$teardown = function EventHandler$teardown() {
-		// Tear down dynamic name
-		if ( typeof this.action !== 'string' ) {
-			this.action.teardown();
+	/* virtualdom/items/Element/EventHandler/prototype/rebind.js */
+	var virtualdom_items_Element_EventHandler$rebind = function EventHandler$rebind( indexRef, newIndex, oldKeypath, newKeypath ) {
+		var fragment;
+		if ( this.method ) {
+			fragment = this.element.parentFragment;
+			this.refResolvers.forEach( rebind );
+			return;
 		}
-		// Tear down dynamic parameters
+		if ( typeof this.action !== 'string' ) {
+			rebind( this.action );
+		}
 		if ( this.dynamicParams ) {
-			this.dynamicParams.teardown();
+			rebind( this.dynamicParams );
+		}
+
+		function rebind( thing ) {
+			thing && thing.rebind( indexRef, newIndex, oldKeypath, newKeypath );
 		}
 	};
+
+	/* virtualdom/items/Element/EventHandler/prototype/render.js */
+	var virtualdom_items_Element_EventHandler$render = function EventHandler$render() {
+		this.node = this.element.node;
+		// store this on the node itself, so it can be retrieved by a
+		// universal handler
+		this.node._ractive.events[ this.name ] = this;
+		if ( this.method || this.getAction() ) {
+			this.listen();
+		}
+	};
+
+	/* virtualdom/items/Element/EventHandler/prototype/resolve.js */
+	var virtualdom_items_Element_EventHandler$resolve = function EventHandler$resolve( index, keypath ) {
+		this.keypaths[ index ] = keypath;
+	};
+
+	/* virtualdom/items/Element/EventHandler/prototype/unbind.js */
+	var virtualdom_items_Element_EventHandler$unbind = function() {
+
+		var __export;
+		__export = function EventHandler$unbind() {
+			if ( this.method ) {
+				this.refResolvers.forEach( unbind );
+				return;
+			}
+			// Tear down dynamic name
+			if ( typeof this.action !== 'string' ) {
+				this.action.unbind();
+			}
+			// Tear down dynamic parameters
+			if ( this.dynamicParams ) {
+				this.dynamicParams.unbind();
+			}
+		};
+
+		function unbind( x ) {
+			x.unbind();
+		}
+		return __export;
+	}();
 
 	/* virtualdom/items/Element/EventHandler/prototype/unrender.js */
 	var virtualdom_items_Element_EventHandler$unrender = function( genericHandler ) {
@@ -9286,25 +9731,30 @@ exports.unbind = function(el, type, fn, capture){
 			} else {
 				this.node.removeEventListener( this.name, genericHandler, false );
 			}
+			this.hasListener = false;
 		};
 	}( genericHandler );
 
 	/* virtualdom/items/Element/EventHandler/_EventHandler.js */
-	var EventHandler = function( fire, init, rebind, render, teardown, unrender ) {
+	var EventHandler = function( bubble, fire, getAction, init, listen, rebind, render, resolve, unbind, unrender ) {
 
 		var EventHandler = function( element, name, template ) {
 			this.init( element, name, template );
 		};
 		EventHandler.prototype = {
+			bubble: bubble,
 			fire: fire,
+			getAction: getAction,
 			init: init,
+			listen: listen,
 			rebind: rebind,
 			render: render,
-			teardown: teardown,
+			resolve: resolve,
+			unbind: unbind,
 			unrender: unrender
 		};
 		return EventHandler;
-	}( virtualdom_items_Element_EventHandler$fire, virtualdom_items_Element_EventHandler$init, virtualdom_items_Element_EventHandler$rebind, virtualdom_items_Element_EventHandler$render, virtualdom_items_Element_EventHandler$teardown, virtualdom_items_Element_EventHandler$unrender );
+	}( virtualdom_items_Element_EventHandler$bubble, virtualdom_items_Element_EventHandler$fire, virtualdom_items_Element_EventHandler$getAction, virtualdom_items_Element_EventHandler$init, virtualdom_items_Element_EventHandler$listen, virtualdom_items_Element_EventHandler$rebind, virtualdom_items_Element_EventHandler$render, virtualdom_items_Element_EventHandler$resolve, virtualdom_items_Element_EventHandler$unbind, virtualdom_items_Element_EventHandler$unrender );
 
 	/* virtualdom/items/Element/prototype/init/createEventHandlers.js */
 	var virtualdom_items_Element$init_createEventHandlers = function( EventHandler ) {
@@ -9405,6 +9855,11 @@ exports.unbind = function(el, type, fn, capture){
 					this.init();
 				}
 			},
+			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
+				if ( this.fragment ) {
+					this.fragment.rebind( indexRef, newIndex, oldKeypath, newKeypath );
+				}
+			},
 			teardown: function( updating ) {
 				this.actual.teardown();
 				if ( !updating && this.fragment ) {
@@ -9418,7 +9873,8 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/items/Element/special/select/sync.js */
 	var sync = function( toArray ) {
 
-		return function syncSelect( selectElement ) {
+		var __export;
+		__export = function syncSelect( selectElement ) {
 			var selectNode, selectValue, isMultiple, options, optionWasSelected;
 			selectNode = selectElement.node;
 			if ( !selectNode ) {
@@ -9460,6 +9916,7 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			}
 		}
+		return __export;
 	}( toArray );
 
 	/* virtualdom/items/Element/special/select/bubble.js */
@@ -9492,13 +9949,17 @@ exports.unbind = function(el, type, fn, capture){
 
 		return function initOption( option, template ) {
 			option.select = findParentSelect( option.parent );
+			// we might be inside a <datalist> element
+			if ( !option.select ) {
+				return;
+			}
 			option.select.options.push( option );
 			// If the value attribute is missing, use the element's content
 			if ( !template.a ) {
 				template.a = {};
 			}
 			// ...as long as it isn't disabled
-			if ( !template.a.value && !template.a.hasOwnProperty( 'disabled' ) ) {
+			if ( template.a.value === undefined && !template.a.hasOwnProperty( 'disabled' ) ) {
 				template.a.value = template.f;
 			}
 			// If there is a `selected` attribute, but the <select>
@@ -9510,7 +9971,7 @@ exports.unbind = function(el, type, fn, capture){
 	}( findParentSelect );
 
 	/* virtualdom/items/Element/prototype/init.js */
-	var virtualdom_items_Element$init = function( types, enforceCase, createAttributes, createTwowayBinding, createEventHandlers, Decorator, bubbleSelect, initOption, circular ) {
+	var virtualdom_items_Element$init = function( types, enforceCase, createAttributes, createConditionalAttributes, createTwowayBinding, createEventHandlers, Decorator, bubbleSelect, initOption, circular ) {
 
 		var Fragment;
 		circular.push( function() {
@@ -9537,6 +9998,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			// create attributes
 			this.attributes = createAttributes( this, template.a );
+			this.conditionalAttributes = createConditionalAttributes( this, template.m );
 			// append children, if there are any
 			if ( template.f ) {
 				this.fragment = new Fragment( {
@@ -9565,7 +10027,7 @@ exports.unbind = function(el, type, fn, capture){
 			this.intro = template.t0 || template.t1;
 			this.outro = template.t0 || template.t2;
 		};
-	}( types, enforceCase, virtualdom_items_Element$init_createAttributes, virtualdom_items_Element$init_createTwowayBinding, virtualdom_items_Element$init_createEventHandlers, Decorator, bubble, init, circular );
+	}( types, enforceCase, virtualdom_items_Element$init_createAttributes, virtualdom_items_Element$init_createConditionalAttributes, virtualdom_items_Element$init_createTwowayBinding, virtualdom_items_Element$init_createEventHandlers, Decorator, bubble, init, circular );
 
 	/* virtualdom/items/shared/utils/startsWith.js */
 	var startsWith = function( startsWithKeypath ) {
@@ -9595,8 +10057,14 @@ exports.unbind = function(el, type, fn, capture){
 			if ( this.attributes ) {
 				this.attributes.forEach( rebind );
 			}
+			if ( this.conditionalAttributes ) {
+				this.conditionalAttributes.forEach( rebind );
+			}
 			if ( this.eventHandlers ) {
 				this.eventHandlers.forEach( rebind );
+			}
+			if ( this.decorator ) {
+				rebind( this.decorator );
 			}
 			// rebind children
 			if ( this.fragment ) {
@@ -9626,16 +10094,18 @@ exports.unbind = function(el, type, fn, capture){
 
 	/* virtualdom/items/Element/special/img/render.js */
 	var render = function renderImage( img ) {
-		var width, height, loadHandler;
+		var loadHandler;
 		// if this is an <img>, and we're in a crap browser, we may need to prevent it
 		// from overriding width and height when it loads the src
-		if ( ( width = img.getAttribute( 'width' ) ) || ( height = img.getAttribute( 'height' ) ) ) {
+		if ( img.attributes.width || img.attributes.height ) {
 			img.node.addEventListener( 'load', loadHandler = function() {
-				if ( width ) {
-					img.node.width = width.value;
+				var width = img.getAttribute( 'width' ),
+					height = img.getAttribute( 'height' );
+				if ( width !== undefined ) {
+					img.node.setAttribute( 'width', width );
 				}
-				if ( height ) {
-					img.node.height = height.value;
+				if ( height !== undefined ) {
+					img.node.setAttribute( 'height', height );
 				}
 				img.node.removeEventListener( 'load', loadHandler, false );
 			}, false );
@@ -9794,8 +10264,7 @@ exports.unbind = function(el, type, fn, capture){
 	/* shared/Ticker.js */
 	var Ticker = function( warn, getTime, animations ) {
 
-		// TODO what happens if a transition is aborted?
-		// TODO use this with Animation to dedupe some code?
+		var __export;
 		var Ticker = function( options ) {
 			var easing;
 			this.duration = options.duration;
@@ -9848,11 +10317,12 @@ exports.unbind = function(el, type, fn, capture){
 				this.running = false;
 			}
 		};
-		return Ticker;
+		__export = Ticker;
 
 		function linear( t ) {
 			return t;
 		}
+		return __export;
 	}( warn, getTime, animations );
 
 	/* virtualdom/items/Element/Transition/helpers/unprefix.js */
@@ -9918,6 +10388,7 @@ exports.unbind = function(el, type, fn, capture){
 					var hashPrefix, jsTransitionsComplete, cssTransitionsComplete, checkComplete, transitionEndHandler;
 					checkComplete = function() {
 						if ( jsTransitionsComplete && cssTransitionsComplete ) {
+							// will changes to events and fire have an unexpected consequence here?
 							t.root.fire( t.name + ':end', t.node, t.isIntro );
 							resolve();
 						}
@@ -10163,13 +10634,16 @@ exports.unbind = function(el, type, fn, capture){
 	}( legacy, isClient, warn, Promise, prefix, virtualdom_items_Element_Transition$animateStyle_createTransitions, virtualdom_items_Element_Transition$animateStyle_visibility );
 
 	/* utils/fillGaps.js */
-	var fillGaps = function( target, source ) {
-		var key;
-		for ( key in source ) {
-			if ( source.hasOwnProperty( key ) && !( key in target ) ) {
-				target[ key ] = source[ key ];
+	var fillGaps = function( target ) {
+		var SLICE$0 = Array.prototype.slice;
+		var sources = SLICE$0.call( arguments, 1 );
+		sources.forEach( function( s ) {
+			for ( var key in s ) {
+				if ( s.hasOwnProperty( key ) && !( key in target ) ) {
+					target[ key ] = s[ key ];
+				}
 			}
-		}
+		} );
 		return target;
 	};
 
@@ -10198,27 +10672,32 @@ exports.unbind = function(el, type, fn, capture){
 			} else if ( !params ) {
 				params = {};
 			}
-			return fillGaps( params, defaults );
+			return fillGaps( {}, params, defaults );
 		};
 	}( fillGaps );
 
 	/* virtualdom/items/Element/Transition/prototype/start.js */
 	var virtualdom_items_Element_Transition$start = function() {
 
-		return function Transition$start() {
+		var __export;
+		__export = function Transition$start() {
 			var t = this,
-				node, originalStyle;
+				node, originalStyle, completed;
 			node = t.node = t.element.node;
 			originalStyle = node.getAttribute( 'style' );
 			// create t.complete() - we don't want this on the prototype,
 			// because we don't want `this` silliness when passing it as
 			// an argument
 			t.complete = function( noReset ) {
+				if ( completed ) {
+					return;
+				}
 				if ( !noReset && t.isIntro ) {
 					resetStyle( node, originalStyle );
 				}
 				node._ractive.transition = null;
 				t._manager.remove( t );
+				completed = true;
 			};
 			// If the transition function doesn't exist, abort
 			if ( !t._fn ) {
@@ -10238,6 +10717,7 @@ exports.unbind = function(el, type, fn, capture){
 				node.removeAttribute( 'style' );
 			}
 		}
+		return __export;
 	}();
 
 	/* virtualdom/items/Element/Transition/_Transition.js */
@@ -10264,10 +10744,15 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/items/Element/prototype/render.js */
 	var virtualdom_items_Element$render = function( namespaces, isArray, warn, create, createElement, defineProperty, noop, runloop, getInnerContext, renderImage, Transition ) {
 
+		var __export;
 		var updateCss, updateScript;
 		updateCss = function() {
 			var node = this.node,
 				content = this.fragment.toString( false );
+			// IE8 has no styleSheet unless there's a type text/css
+			if ( window && window.appearsToBeIELessEqual8 ) {
+				node.type = 'text/css';
+			}
 			if ( node.styleSheet ) {
 				node.styleSheet.cssText = content;
 			} else {
@@ -10283,7 +10768,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			this.node.text = this.fragment.toString( false );
 		};
-		return function Element$render() {
+		__export = function Element$render() {
 			var this$0 = this;
 			var root = this.root,
 				namespace, node;
@@ -10310,6 +10795,9 @@ exports.unbind = function(el, type, fn, capture){
 			} );
 			// Render attributes
 			this.attributes.forEach( function( a ) {
+				return a.render( node );
+			} );
+			this.conditionalAttributes.forEach( function( a ) {
 				return a.render( node );
 			} );
 			// Render children
@@ -10349,8 +10837,8 @@ exports.unbind = function(el, type, fn, capture){
 			// apply decorator(s)
 			if ( this.decorator && this.decorator.fn ) {
 				runloop.scheduleTask( function() {
-					this$0.decorator.init();
-				} );
+					return this$0.decorator.init();
+				}, true );
 			}
 			// trigger intro transition
 			if ( root.transitionsEnabled && this.intro ) {
@@ -10358,7 +10846,8 @@ exports.unbind = function(el, type, fn, capture){
 				runloop.registerTransition( transition );
 				runloop.scheduleTask( function() {
 					return transition.start();
-				} );
+				}, true );
+				this.transition = transition;
 			}
 			if ( this.name === 'option' ) {
 				processOption( this );
@@ -10369,7 +10858,7 @@ exports.unbind = function(el, type, fn, capture){
 				// allow you to programmatically focus the element until it's in the DOM
 				runloop.scheduleTask( function() {
 					return this$0.node.focus();
-				} );
+				}, true );
 			}
 			updateLiveQueries( this );
 			return this.node;
@@ -10397,6 +10886,9 @@ exports.unbind = function(el, type, fn, capture){
 
 		function processOption( option ) {
 			var optionValue, selectValue, i;
+			if ( !option.select ) {
+				return;
+			}
 			selectValue = option.select.getAttribute( 'value' );
 			if ( selectValue === undefined ) {
 				return;
@@ -10432,15 +10924,17 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			} while ( instance = instance._parent );
 		}
+		return __export;
 	}( namespaces, isArray, warn, create, createElement, defineProperty, noop, runloop, getInnerContext, render, Transition );
 
 	/* virtualdom/items/Element/prototype/toString.js */
-	var virtualdom_items_Element$toString = function( voidElementNames, isArray ) {
+	var virtualdom_items_Element$toString = function( voidElementNames, isArray, escapeHtml ) {
 
-		return function() {
+		var __export;
+		__export = function() {
 			var str, escape;
 			str = '<' + ( this.template.y ? '!DOCTYPE' : this.template.e );
-			str += this.attributes.map( stringifyAttribute ).join( '' );
+			str += this.attributes.map( stringifyAttribute ).join( '' ) + this.conditionalAttributes.map( stringifyAttribute ).join( '' );
 			// Special case - selected options
 			if ( this.name === 'option' && optionIsSelected( this ) ) {
 				str += ' selected';
@@ -10450,6 +10944,12 @@ exports.unbind = function(el, type, fn, capture){
 				str += ' checked';
 			}
 			str += '>';
+			// Special case - textarea
+			if ( this.name === 'textarea' && this.getAttribute( 'value' ) !== undefined ) {
+				str += escapeHtml( this.getAttribute( 'value' ) );
+			} else if ( this.getAttribute( 'contenteditable' ) !== undefined ) {
+				str += this.getAttribute( 'value' );
+			}
 			if ( this.fragment ) {
 				escape = this.name !== 'script' && this.name !== 'style';
 				str += this.fragment.toString( escape );
@@ -10464,7 +10964,7 @@ exports.unbind = function(el, type, fn, capture){
 		function optionIsSelected( element ) {
 			var optionValue, selectValue, i;
 			optionValue = element.getAttribute( 'value' );
-			if ( optionValue === undefined ) {
+			if ( optionValue === undefined || !element.select ) {
 				return false;
 			}
 			selectValue = element.select.getAttribute( 'value' );
@@ -10499,43 +10999,56 @@ exports.unbind = function(el, type, fn, capture){
 			var str = attribute.toString();
 			return str ? ' ' + str : '';
 		}
-	}( voidElementNames, isArray );
+		return __export;
+	}( voidElementNames, isArray, escapeHtml );
 
 	/* virtualdom/items/Element/special/option/unbind.js */
 	var virtualdom_items_Element_special_option_unbind = function( removeFromArray ) {
 
 		return function unbindOption( option ) {
-			removeFromArray( option.select.options, option );
+			if ( option.select ) {
+				removeFromArray( option.select.options, option );
+			}
 		};
 	}( removeFromArray );
 
 	/* virtualdom/items/Element/prototype/unbind.js */
 	var virtualdom_items_Element$unbind = function( unbindOption ) {
 
-		return function Element$unbind() {
+		var __export;
+		__export = function Element$unbind() {
 			if ( this.fragment ) {
 				this.fragment.unbind();
 			}
 			if ( this.binding ) {
 				this.binding.unbind();
 			}
+			if ( this.eventHandlers ) {
+				this.eventHandlers.forEach( unbind );
+			}
 			// Special case - <option>
 			if ( this.name === 'option' ) {
 				unbindOption( this );
 			}
-			this.attributes.forEach( unbindAttribute );
+			this.attributes.forEach( unbind );
+			this.conditionalAttributes.forEach( unbind );
 		};
 
-		function unbindAttribute( attribute ) {
-			attribute.unbind();
+		function unbind( x ) {
+			x.unbind();
 		}
+		return __export;
 	}( virtualdom_items_Element_special_option_unbind );
 
 	/* virtualdom/items/Element/prototype/unrender.js */
 	var virtualdom_items_Element$unrender = function( runloop, Transition ) {
 
-		return function Element$unrender( shouldDestroy ) {
+		var __export;
+		__export = function Element$unrender( shouldDestroy ) {
 			var binding, bindings;
+			if ( this.transition ) {
+				this.transition.complete();
+			}
 			// Detach as soon as we can
 			if ( this.name === 'option' ) {
 				// <option> elements detach immediately, so that
@@ -10588,6 +11101,7 @@ exports.unbind = function(el, type, fn, capture){
 				query._remove( element.node );
 			}
 		}
+		return __export;
 	}( runloop, Transition );
 
 	/* virtualdom/items/Element/_Element.js */
@@ -10619,9 +11133,10 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/items/Partial/deIndent.js */
 	var deIndent = function() {
 
+		var __export;
 		var empty = /^\s*$/,
 			leadingWhitespace = /^\s*/;
-		return function( str ) {
+		__export = function( str ) {
 			var lines, firstLine, lastLine, minIndent;
 			lines = str.split( '\n' );
 			// remove first and last line, if they only contain whitespace
@@ -10649,12 +11164,14 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return previous;
 		}
+		return __export;
 	}();
 
-	/* virtualdom/items/Partial/getPartialDescriptor.js */
-	var getPartialDescriptor = function( log, config, parser, deIndent ) {
+	/* virtualdom/items/Partial/getPartialTemplate.js */
+	var getPartialTemplate = function( log, config, parser, deIndent ) {
 
-		return function getPartialDescriptor( ractive, name ) {
+		var __export;
+		__export = function getPartialTemplate( ractive, name ) {
 			var partial;
 			// If the partial in instance or view heirarchy instances, great
 			if ( partial = getPartialFromRegistry( ractive, name ) ) {
@@ -10672,15 +11189,6 @@ exports.unbind = function(el, type, fn, capture){
 				// register (and return main partial if there are others in the template)
 				return ractive.partials[ name ] = parsed.t;
 			}
-			log.error( {
-				debug: ractive.debug,
-				message: 'noTemplateForPartial',
-				args: {
-					name: name
-				}
-			} );
-			// No match? Return an empty array
-			return [];
 		};
 
 		function getPartialFromRegistry( ractive, name ) {
@@ -10737,6 +11245,7 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return partial.v ? partial.t : partial;
 		}
+		return __export;
 	}( log, config, parser, deIndent );
 
 	/* virtualdom/items/Partial/applyIndent.js */
@@ -10752,68 +11261,37 @@ exports.unbind = function(el, type, fn, capture){
 	};
 
 	/* virtualdom/items/Partial/_Partial.js */
-	var Partial = function( types, getPartialDescriptor, applyIndent, circular ) {
+	var Partial = function( log, types, getPartialTemplate, applyIndent, circular, runloop, Mustache, rebind, unbind ) {
 
 		var Partial, Fragment;
 		circular.push( function() {
 			Fragment = circular.Fragment;
 		} );
 		Partial = function( options ) {
-			var parentFragment = this.parentFragment = options.parentFragment,
-				template;
-			this.type = types.PARTIAL;
-			this.name = options.template.r;
-			this.index = options.index;
+			var parentFragment, template;
+			parentFragment = this.parentFragment = options.parentFragment;
 			this.root = parentFragment.root;
-			if ( !options.template.r ) {
-				// TODO support dynamic partial switching
-				throw new Error( 'Partials must have a static reference (no expressions). This may change in a future version of Ractive.' );
+			this.type = types.PARTIAL;
+			this.index = options.index;
+			this.name = options.template.r;
+			this.fragment = this.fragmentToRender = this.fragmentToUnrender = null;
+			Mustache.init( this, options );
+			// If this didn't resolve, it most likely means we have a named partial
+			// (i.e. `{{>foo}}` means 'use the foo partial', not 'use the partial
+			// whose name is the value of `foo`')
+			if ( !this.keypath && ( template = getPartialTemplate( this.root, this.name ) ) ) {
+				unbind.call( this );
+				// prevent any further changes
+				this.isNamed = true;
+				this.setTemplate( template );
 			}
-			template = getPartialDescriptor( parentFragment.root, options.template.r );
-			this.fragment = new Fragment( {
-				template: template,
-				root: parentFragment.root,
-				owner: this,
-				pElement: parentFragment.pElement
-			} );
 		};
 		Partial.prototype = {
 			bubble: function() {
 				this.parentFragment.bubble();
 			},
-			firstNode: function() {
-				return this.fragment.firstNode();
-			},
-			findNextNode: function() {
-				return this.parentFragment.findNextNode( this );
-			},
 			detach: function() {
 				return this.fragment.detach();
-			},
-			render: function() {
-				return this.fragment.render();
-			},
-			unrender: function( shouldDestroy ) {
-				this.fragment.unrender( shouldDestroy );
-			},
-			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
-				return this.fragment.rebind( indexRef, newIndex, oldKeypath, newKeypath );
-			},
-			unbind: function() {
-				this.fragment.unbind();
-			},
-			toString: function( toString ) {
-				var string, previousItem, lastLine, match;
-				string = this.fragment.toString( toString );
-				previousItem = this.parentFragment.items[ this.index - 1 ];
-				if ( !previousItem || previousItem.type !== types.TEXT ) {
-					return string;
-				}
-				lastLine = previousItem.template.split( '\n' ).pop();
-				if ( match = /^\s+$/.exec( lastLine ) ) {
-					return applyIndent( string, match[ 0 ] );
-				}
-				return string;
 			},
 			find: function( selector ) {
 				return this.fragment.find( selector );
@@ -10827,12 +11305,118 @@ exports.unbind = function(el, type, fn, capture){
 			findAllComponents: function( selector, query ) {
 				return this.fragment.findAllComponents( selector, query );
 			},
+			firstNode: function() {
+				return this.fragment.firstNode();
+			},
+			findNextNode: function() {
+				return this.parentFragment.findNextNode( this );
+			},
 			getValue: function() {
 				return this.fragment.getValue();
+			},
+			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
+				rebind.call( this, indexRef, newIndex, oldKeypath, newKeypath );
+				this.fragment.rebind( indexRef, newIndex, oldKeypath, newKeypath );
+			},
+			render: function() {
+				this.docFrag = document.createDocumentFragment();
+				this.update();
+				this.rendered = true;
+				return this.docFrag;
+			},
+			resolve: Mustache.resolve,
+			setValue: function( value ) {
+				var template;
+				if ( value !== undefined && value === this.value ) {
+					// nothing has changed, so no work to be done
+					return;
+				}
+				template = getPartialTemplate( this.root, '' + value );
+				// we may be here if we have a partial like `{{>foo}}` and `foo` is the
+				// name of both a data property (whose value ISN'T the name of a partial)
+				// and a partial. In those cases, this becomes a named partial
+				if ( !template && this.name && ( template = getPartialTemplate( this.root, this.name ) ) ) {
+					unbind.call( this );
+					this.isNamed = true;
+				}
+				if ( !template ) {
+					log.error( {
+						debug: this.root.debug,
+						message: 'noTemplateForPartial',
+						args: {
+							name: this.name
+						}
+					} );
+				}
+				this.setTemplate( template || [] );
+				this.value = value;
+				this.bubble();
+				if ( this.rendered ) {
+					runloop.addView( this );
+				}
+			},
+			setTemplate: function( template ) {
+				if ( this.fragment ) {
+					this.fragment.unbind();
+					this.fragmentToUnrender = this.fragment;
+				}
+				this.fragment = new Fragment( {
+					template: template,
+					root: this.root,
+					owner: this,
+					pElement: this.parentFragment.pElement
+				} );
+				this.fragmentToRender = this.fragment;
+			},
+			toString: function( toString ) {
+				var string, previousItem, lastLine, match;
+				string = this.fragment.toString( toString );
+				previousItem = this.parentFragment.items[ this.index - 1 ];
+				if ( !previousItem || previousItem.type !== types.TEXT ) {
+					return string;
+				}
+				lastLine = previousItem.text.split( '\n' ).pop();
+				if ( match = /^\s+$/.exec( lastLine ) ) {
+					return applyIndent( string, match[ 0 ] );
+				}
+				return string;
+			},
+			unbind: function() {
+				if ( !this.isNamed ) {
+					// dynamic partial - need to unbind self
+					unbind.call( this );
+				}
+				if ( this.fragment ) {
+					this.fragment.unbind();
+				}
+			},
+			unrender: function( shouldDestroy ) {
+				if ( this.rendered ) {
+					if ( this.fragment ) {
+						this.fragment.unrender( shouldDestroy );
+					}
+					this.rendered = false;
+				}
+			},
+			update: function() {
+				var target, anchor;
+				if ( this.fragmentToUnrender ) {
+					this.fragmentToUnrender.unrender( true );
+					this.fragmentToUnrender = null;
+				}
+				if ( this.fragmentToRender ) {
+					this.docFrag.appendChild( this.fragmentToRender.render() );
+					this.fragmentToRender = null;
+				}
+				if ( this.rendered ) {
+					target = this.parentFragment.getNode();
+					anchor = this.parentFragment.findNextNode( this );
+					target.insertBefore( this.docFrag, anchor );
+				}
 			}
 		};
 		return Partial;
-	}( types, getPartialDescriptor, applyIndent, circular );
+	}( log, types, getPartialTemplate, applyIndent, circular, runloop, Mustache, rebind, unbind );
 
 	/* virtualdom/items/Component/getComponent.js */
 	var getComponent = function( config, log, circular ) {
@@ -10876,9 +11460,15 @@ exports.unbind = function(el, type, fn, capture){
 	}( config, log, circular );
 
 	/* virtualdom/items/Component/prototype/detach.js */
-	var virtualdom_items_Component$detach = function Component$detach() {
-		return this.instance.fragment.detach();
-	};
+	var virtualdom_items_Component$detach = function( Hook ) {
+
+		var detachHook = new Hook( 'detach' );
+		return function Component$detach() {
+			var detached = this.instance.fragment.detach();
+			detachHook.fire( this.instance );
+			return detached;
+		};
+	}( Ractive$shared_hooks_Hook );
 
 	/* virtualdom/items/Component/prototype/find.js */
 	var virtualdom_items_Component$find = function Component$find( selector ) {
@@ -10964,10 +11554,52 @@ exports.unbind = function(el, type, fn, capture){
 		return ComponentParameter;
 	}( runloop, circular );
 
-	/* virtualdom/items/Component/initialise/createModel/_createModel.js */
-	var createModel = function( types, parseJSON, resolveRef, ComponentParameter ) {
+	/* virtualdom/items/Component/initialise/createModel/ReferenceExpressionParameter.js */
+	var ReferenceExpressionParameter = function( ReferenceExpressionResolver, createComponentBinding ) {
 
-		return function( component, defaultData, attributes, toBind ) {
+		var ReferenceExpressionParameter = function( component, childKeypath, template, toBind ) {
+			var this$0 = this;
+			this.root = component.root;
+			this.parentFragment = component.parentFragment;
+			this.ready = false;
+			this.hash = null;
+			this.resolver = new ReferenceExpressionResolver( this, template, function( keypath ) {
+				// Are we updating an existing binding?
+				if ( this$0.binding || ( this$0.binding = component.bindings[ this$0.hash ] ) ) {
+					component.bindings[ this$0.hash ] = null;
+					this$0.binding.rebind( keypath );
+					this$0.hash = keypath + '=' + childKeypath;
+					component.bindings[ this$0.hash ];
+				} else {
+					if ( !this$0.ready ) {
+						// The child instance isn't created yet, we need to create the binding later
+						toBind.push( {
+							childKeypath: childKeypath,
+							parentKeypath: keypath
+						} );
+					} else {
+						createComponentBinding( component, component.root, keypath, childKeypath );
+					}
+				}
+				this$0.value = component.root.viewmodel.get( keypath );
+			} );
+		};
+		ReferenceExpressionParameter.prototype = {
+			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
+				this.resolver.rebind( indexRef, newIndex, oldKeypath, newKeypath );
+			},
+			unbind: function() {
+				this.resolver.unbind();
+			}
+		};
+		return ReferenceExpressionParameter;
+	}( ReferenceExpressionResolver, createComponentBinding );
+
+	/* virtualdom/items/Component/initialise/createModel/_createModel.js */
+	var createModel = function( types, parseJSON, resolveRef, ComponentParameter, ReferenceExpressionParameter ) {
+
+		var __export;
+		__export = function( component, defaultData, attributes, toBind ) {
 			var data = {},
 				key, value;
 			// some parameters, e.g. foo="The value is {{bar}}", are 'complex' - in
@@ -11001,23 +11633,34 @@ exports.unbind = function(el, type, fn, capture){
 			if ( template === null ) {
 				return true;
 			}
-			// If a regular interpolator, we bind to it
-			if ( template.length === 1 && template[ 0 ].t === types.INTERPOLATOR && template[ 0 ].r ) {
-				// Is it an index reference?
-				if ( parentFragment.indexRefs && parentFragment.indexRefs[ indexRef = template[ 0 ].r ] !== undefined ) {
-					component.indexRefBindings[ indexRef ] = key;
-					return parentFragment.indexRefs[ indexRef ];
+			// Single interpolator?
+			if ( template.length === 1 && template[ 0 ].t === types.INTERPOLATOR ) {
+				// If it's a regular interpolator, we bind to it
+				if ( template[ 0 ].r ) {
+					// Is it an index reference?
+					if ( parentFragment.indexRefs && parentFragment.indexRefs[ indexRef = template[ 0 ].r ] !== undefined ) {
+						component.indexRefBindings[ indexRef ] = key;
+						return parentFragment.indexRefs[ indexRef ];
+					}
+					// TODO what about references that resolve late? Should these be considered?
+					keypath = resolveRef( parentInstance, template[ 0 ].r, parentFragment ) || template[ 0 ].r;
+					// We need to set up bindings between parent and child, but
+					// we can't do it yet because the child instance doesn't exist
+					// yet - so we make a note instead
+					toBind.push( {
+						childKeypath: key,
+						parentKeypath: keypath
+					} );
+					return parentInstance.viewmodel.get( keypath );
 				}
-				// TODO what about references that resolve late? Should these be considered?
-				keypath = resolveRef( parentInstance, template[ 0 ].r, parentFragment ) || template[ 0 ].r;
-				// We need to set up bindings between parent and child, but
-				// we can't do it yet because the child instance doesn't exist
-				// yet - so we make a note instead
-				toBind.push( {
-					childKeypath: key,
-					parentKeypath: keypath
-				} );
-				return parentInstance.viewmodel.get( keypath );
+				// If it's a reference expression (e.g. `{{foo[bar]}}`), we need
+				// to watch the keypath and create/destroy bindings
+				if ( template[ 0 ].rx ) {
+					parameter = new ReferenceExpressionParameter( component, key, template[ 0 ].rx, toBind );
+					component.complexParameters.push( parameter );
+					parameter.ready = true;
+					return parameter.value;
+				}
 			}
 			// We have a 'complex parameter' - we need to create a full-blown string
 			// fragment in order to evaluate and observe its value
@@ -11025,30 +11668,48 @@ exports.unbind = function(el, type, fn, capture){
 			component.complexParameters.push( parameter );
 			return parameter.value;
 		}
-	}( types, parseJSON, resolveRef, ComponentParameter );
+		return __export;
+	}( types, parseJSON, resolveRef, ComponentParameter, ReferenceExpressionParameter );
 
 	/* virtualdom/items/Component/initialise/createInstance.js */
-	var createInstance = function( component, Component, data, contentDescriptor ) {
-		var instance, parentFragment, partials, root;
-		parentFragment = component.parentFragment;
-		root = component.root;
-		// Make contents available as a {{>content}} partial
-		partials = {
-			content: contentDescriptor || []
+	var createInstance = function( log ) {
+
+		return function( component, Component, data, contentDescriptor ) {
+			var instance, parentFragment, partials, ractive;
+			parentFragment = component.parentFragment;
+			ractive = component.root;
+			// Make contents available as a {{>content}} partial
+			partials = {
+				content: contentDescriptor || []
+			};
+			if ( Component.defaults.el ) {
+				log.warn( {
+					debug: ractive.debug,
+					message: 'defaultElSpecified',
+					args: {
+						name: component.name
+					}
+				} );
+			}
+			instance = new Component( {
+				el: null,
+				append: true,
+				data: data,
+				partials: partials,
+				magic: ractive.magic || Component.defaults.magic,
+				modifyArrays: ractive.modifyArrays,
+				_parent: ractive,
+				_component: component,
+				// need to inherit runtime parent adaptors
+				adapt: ractive.adapt,
+				yield: {
+					template: contentDescriptor,
+					instance: ractive
+				}
+			} );
+			return instance;
 		};
-		instance = new Component( {
-			append: true,
-			data: data,
-			partials: partials,
-			magic: root.magic || Component.defaults.magic,
-			modifyArrays: root.modifyArrays,
-			_parent: root,
-			_component: component,
-			// need to inherit runtime parent adaptors
-			adapt: root.adapt
-		} );
-		return instance;
-	};
+	}( log );
 
 	/* virtualdom/items/Component/initialise/createBindings.js */
 	var createBindings = function( createComponentBinding ) {
@@ -11067,14 +11728,14 @@ exports.unbind = function(el, type, fn, capture){
 	}( createComponentBinding );
 
 	/* virtualdom/items/Component/initialise/propagateEvents.js */
-	var propagateEvents = function( log ) {
+	var propagateEvents = function( circular, fireEvent, log ) {
 
-		// TODO how should event arguments be handled? e.g.
-		// <widget on-foo='bar:1,2,3'/>
-		// The event 'bar' will be fired on the parent instance
-		// when 'foo' fires on the child, but the 1,2,3 arguments
-		// will be lost
-		return function( component, eventsDescriptor ) {
+		var __export;
+		var Fragment;
+		circular.push( function() {
+			Fragment = circular.Fragment;
+		} );
+		__export = function propagateEvents( component, eventsDescriptor ) {
 			var eventName;
 			for ( eventName in eventsDescriptor ) {
 				if ( eventsDescriptor.hasOwnProperty( eventName ) ) {
@@ -11091,12 +11752,22 @@ exports.unbind = function(el, type, fn, capture){
 				} );
 			}
 			childInstance.on( eventName, function() {
-				var args = Array.prototype.slice.call( arguments );
-				args.unshift( proxyEventName );
-				parentInstance.fire.apply( parentInstance, args );
+				var event, args;
+				// semi-weak test, but what else? tag the event obj ._isEvent ?
+				if ( arguments.length && arguments[ 0 ] && arguments[ 0 ].node ) {
+					event = Array.prototype.shift.call( arguments );
+				}
+				args = Array.prototype.slice.call( arguments );
+				fireEvent( parentInstance, proxyEventName, {
+					event: event,
+					args: args
+				} );
+				// cancel bubbling
+				return false;
 			} );
 		}
-	}( log );
+		return __export;
+	}( circular, Ractive$shared_fireEvent, log );
 
 	/* virtualdom/items/Component/initialise/updateLiveQueries.js */
 	var updateLiveQueries = function( component ) {
@@ -11124,6 +11795,10 @@ exports.unbind = function(el, type, fn, capture){
 			this.index = options.index;
 			this.indexRefBindings = {};
 			this.bindings = [];
+			// even though only one yielder is allowed, we need to have an array of them
+			// as it's possible to cause a yielder to be created before the last one
+			// was destroyed in the same turn of the runloop
+			this.yielders = [];
 			if ( !Component ) {
 				throw new Error( 'Component "' + this.name + '" not found' );
 			}
@@ -11162,15 +11837,20 @@ exports.unbind = function(el, type, fn, capture){
 					binding.rebind( updated );
 				}
 			} );
-			this.complexParameters.forEach( function( parameter ) {
-				parameter.rebind( indexRef, newIndex, oldKeypath, newKeypath );
-			} );
+			this.complexParameters.forEach( rebind );
+			if ( this.yielders[ 0 ] ) {
+				rebind( this.yielders[ 0 ] );
+			}
 			if ( indexRefAlias = this.indexRefBindings[ indexRef ] ) {
 				runloop.addViewmodel( childInstance.viewmodel );
 				childInstance.viewmodel.set( indexRefAlias, newIndex );
 			}
 			if ( query = this.root._liveComponentQueries[ '_' + this.name ] ) {
 				query._makeDirty();
+			}
+
+			function rebind( x ) {
+				x.rebind( indexRef, newIndex, oldKeypath, newKeypath );
 			}
 		};
 	}( runloop, getNewKeypath );
@@ -11180,7 +11860,7 @@ exports.unbind = function(el, type, fn, capture){
 		var instance = this.instance;
 		instance.render( this.parentFragment.getNode() );
 		this.rendered = true;
-		return instance.detach();
+		return instance.fragment.detach();
 	};
 
 	/* virtualdom/items/Component/prototype/toString.js */
@@ -11189,13 +11869,22 @@ exports.unbind = function(el, type, fn, capture){
 	};
 
 	/* virtualdom/items/Component/prototype/unbind.js */
-	var virtualdom_items_Component$unbind = function() {
+	var virtualdom_items_Component$unbind = function( Hook, removeFromArray ) {
 
-		return function Component$unbind() {
+		var __export;
+		var teardownHook = new Hook( 'teardown' );
+		__export = function Component$unbind() {
+			var instance = this.instance;
 			this.complexParameters.forEach( unbind );
 			this.bindings.forEach( unbind );
 			removeFromLiveComponentQueries( this );
-			this.instance.fragment.unbind();
+			// teardown the instance
+			instance.fragment.unbind();
+			instance.viewmodel.teardown();
+			if ( instance.fragment.rendered && instance.el.__ractive_instances__ ) {
+				removeFromArray( instance.el.__ractive_instances__, instance );
+			}
+			teardownHook.fire( instance );
 		};
 
 		function unbind( thing ) {
@@ -11211,11 +11900,11 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			} while ( instance = instance._parent );
 		}
-	}();
+		return __export;
+	}( Ractive$shared_hooks_Hook, removeFromArray );
 
 	/* virtualdom/items/Component/prototype/unrender.js */
 	var virtualdom_items_Component$unrender = function Component$unrender( shouldDestroy ) {
-		this.instance.fire( 'teardown' );
 		this.shouldDestroy = shouldDestroy;
 		this.instance.unrender();
 	};
@@ -11274,8 +11963,79 @@ exports.unbind = function(el, type, fn, capture){
 		return Comment;
 	}( types, detach );
 
+	/* virtualdom/items/Yielder.js */
+	var Yielder = function( runloop, removeFromArray, circular ) {
+
+		var Fragment;
+		circular.push( function() {
+			Fragment = circular.Fragment;
+		} );
+		var Yielder = function( options ) {
+			var componentInstance, component;
+			componentInstance = options.parentFragment.root;
+			this.component = component = componentInstance.component;
+			this.surrogateParent = options.parentFragment;
+			this.parentFragment = component.parentFragment;
+			this.fragment = new Fragment( {
+				owner: this,
+				root: componentInstance.yield.instance,
+				template: componentInstance.yield.template,
+				pElement: this.surrogateParent.pElement
+			} );
+			component.yielders.push( this );
+			runloop.scheduleTask( function() {
+				if ( component.yielders.length > 1 ) {
+					throw new Error( 'A component template can only have one {{yield}} declaration at a time' );
+				}
+			} );
+		};
+		Yielder.prototype = {
+			detach: function() {
+				return this.fragment.detach();
+			},
+			find: function( selector ) {
+				return this.fragment.find( selector );
+			},
+			findAll: function( selector, query ) {
+				return this.fragment.findAll( selector, query );
+			},
+			findComponent: function( selector ) {
+				return this.fragment.findComponent( selector );
+			},
+			findAllComponents: function( selector, query ) {
+				return this.fragment.findAllComponents( selector, query );
+			},
+			findNextNode: function() {
+				return this.surrogateParent.findNextNode( this );
+			},
+			firstNode: function() {
+				return this.fragment.firstNode();
+			},
+			getValue: function( options ) {
+				return this.fragment.getValue( options );
+			},
+			render: function() {
+				return this.fragment.render();
+			},
+			unbind: function() {
+				this.fragment.unbind();
+			},
+			unrender: function( shouldDestroy ) {
+				this.fragment.unrender( shouldDestroy );
+				removeFromArray( this.component.yielders, this );
+			},
+			rebind: function( indexRef, newIndex, oldKeypath, newKeypath ) {
+				this.fragment.rebind( indexRef, newIndex, oldKeypath, newKeypath );
+			},
+			toString: function() {
+				return this.fragment.toString();
+			}
+		};
+		return Yielder;
+	}( runloop, removeFromArray, circular );
+
 	/* virtualdom/Fragment/prototype/init/createItem.js */
-	var virtualdom_Fragment$init_createItem = function( types, Text, Interpolator, Section, Triple, Element, Partial, getComponent, Component, Comment ) {
+	var virtualdom_Fragment$init_createItem = function( types, Text, Interpolator, Section, Triple, Element, Partial, getComponent, Component, Comment, Yielder ) {
 
 		return function createItem( options ) {
 			if ( typeof options.template === 'string' ) {
@@ -11283,6 +12043,9 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			switch ( options.template.t ) {
 				case types.INTERPOLATOR:
+					if ( options.template.r === 'yield' ) {
+						return new Yielder( options );
+					}
 					return new Interpolator( options );
 				case types.SECTION:
 					return new Section( options );
@@ -11302,7 +12065,7 @@ exports.unbind = function(el, type, fn, capture){
 					throw new Error( 'Something very strange happened. Please file an issue at https://github.com/ractivejs/ractive/issues. Thanks!' );
 			}
 		};
-	}( types, Text, Interpolator, Section, Triple, Element, Partial, getComponent, Component, Comment );
+	}( types, Text, Interpolator, Section, Triple, Element, Partial, getComponent, Component, Comment, Yielder );
 
 	/* virtualdom/Fragment/prototype/init.js */
 	var virtualdom_Fragment$init = function( types, create, createItem ) {
@@ -11334,8 +12097,6 @@ exports.unbind = function(el, type, fn, capture){
 					}
 				}
 			}
-			// inherit priority
-			this.priority = parentFragment ? parentFragment.priority + 1 : 1;
 			if ( options.indexRef ) {
 				if ( !this.indexRefs ) {
 					this.indexRefs = {};
@@ -11359,7 +12120,7 @@ exports.unbind = function(el, type, fn, capture){
 			} );
 			this.value = this.argsList = null;
 			this.dirtyArgs = this.dirtyValue = true;
-			this.inited = true;
+			this.bound = true;
 		};
 	}( types, create, virtualdom_Fragment$init_createItem );
 
@@ -11367,6 +12128,7 @@ exports.unbind = function(el, type, fn, capture){
 	var virtualdom_Fragment$rebind = function( assignNewKeypath ) {
 
 		return function Fragment$rebind( indexRef, newIndex, oldKeypath, newKeypath ) {
+			this.index = newIndex;
 			// assign new context keypath if needed
 			assignNewKeypath( this, 'context', oldKeypath, newKeypath );
 			if ( this.indexRefs && this.indexRefs[ indexRef ] !== undefined ) {
@@ -11408,8 +12170,13 @@ exports.unbind = function(el, type, fn, capture){
 	/* virtualdom/Fragment/prototype/unbind.js */
 	var virtualdom_Fragment$unbind = function() {
 
-		return function Fragment$unbind() {
+		var __export;
+		__export = function Fragment$unbind() {
+			if ( !this.bound ) {
+				return;
+			}
 			this.items.forEach( unbindItem );
+			this.bound = false;
 		};
 
 		function unbindItem( item ) {
@@ -11417,6 +12184,7 @@ exports.unbind = function(el, type, fn, capture){
 				item.unbind();
 			}
 		}
+		return __export;
 	}();
 
 	/* virtualdom/Fragment/prototype/unrender.js */
@@ -11427,6 +12195,7 @@ exports.unbind = function(el, type, fn, capture){
 		this.items.forEach( function( i ) {
 			return i.unrender( shouldDestroy );
 		} );
+		this.rendered = false;
 	};
 
 	/* virtualdom/Fragment.js */
@@ -11458,15 +12227,16 @@ exports.unbind = function(el, type, fn, capture){
 	}( virtualdom_Fragment$bubble, virtualdom_Fragment$detach, virtualdom_Fragment$find, virtualdom_Fragment$findAll, virtualdom_Fragment$findAllComponents, virtualdom_Fragment$findComponent, virtualdom_Fragment$findNextNode, virtualdom_Fragment$firstNode, virtualdom_Fragment$getNode, virtualdom_Fragment$getValue, virtualdom_Fragment$init, virtualdom_Fragment$rebind, virtualdom_Fragment$render, virtualdom_Fragment$toString, virtualdom_Fragment$unbind, virtualdom_Fragment$unrender, circular );
 
 	/* Ractive/prototype/reset.js */
-	var Ractive$reset = function( runloop, Fragment, config ) {
+	var Ractive$reset = function( Hook, runloop, Fragment, config ) {
 
 		var shouldRerender = [
-			'template',
-			'partials',
-			'components',
-			'decorators',
-			'events'
-		];
+				'template',
+				'partials',
+				'components',
+				'decorators',
+				'events'
+			],
+			resetHook = new Hook( 'reset' );
 		return function Ractive$reset( data, callback ) {
 			var promise, wrapper, changes, i, rerender;
 			if ( typeof data === 'function' && !callback ) {
@@ -11526,21 +12296,17 @@ exports.unbind = function(el, type, fn, capture){
 				this.viewmodel.mark( '' );
 				runloop.end();
 			}
-			this.fire( 'reset', data );
+			resetHook.fire( this, data );
 			if ( callback ) {
 				promise.then( callback );
 			}
 			return promise;
 		};
-	}( runloop, Fragment, config );
+	}( Ractive$shared_hooks_Hook, runloop, Fragment, config );
 
 	/* Ractive/prototype/resetTemplate.js */
 	var Ractive$resetTemplate = function( config, Fragment ) {
 
-		// TODO should resetTemplate be asynchronous? i.e. should it be a case
-		// of outro, update template, intro? I reckon probably not, since that
-		// could be achieved with unrender-resetTemplate-render. Also, it should
-		// conceptually be similar to resetPartial, which couldn't be async
 		return function Ractive$resetTemplate( template ) {
 			var transitionsEnabled, component;
 			config.template.init( null, this, {
@@ -11641,23 +12407,28 @@ exports.unbind = function(el, type, fn, capture){
 	}( Ractive$shared_add );
 
 	/* Ractive/prototype/teardown.js */
-	var Ractive$teardown = function( Promise ) {
+	var Ractive$teardown = function( Hook, Promise, removeFromArray ) {
 
+		var teardownHook = new Hook( 'teardown' );
 		// Teardown. This goes through the root fragment and all its children, removing observers
 		// and generally cleaning up after itself
 		return function Ractive$teardown( callback ) {
 			var promise;
-			this.fire( 'teardown' );
 			this.fragment.unbind();
 			this.viewmodel.teardown();
-			promise = this.rendered ? this.unrender() : Promise.resolve();
+			if ( this.fragment.rendered && this.el.__ractive_instances__ ) {
+				removeFromArray( this.el.__ractive_instances__, this );
+			}
+			this.shouldDestroy = true;
+			promise = this.fragment.rendered ? this.unrender() : Promise.resolve();
+			teardownHook.fire( this );
 			if ( callback ) {
 				// TODO deprecate this?
 				promise.then( callback.bind( this ) );
 			}
 			return promise;
 		};
-	}( Promise );
+	}( Ractive$shared_hooks_Hook, Promise, removeFromArray );
 
 	/* Ractive/prototype/toggle.js */
 	var Ractive$toggle = function( log ) {
@@ -11684,19 +12455,23 @@ exports.unbind = function(el, type, fn, capture){
 	};
 
 	/* Ractive/prototype/unrender.js */
-	var Ractive$unrender = function( removeFromArray, runloop, css ) {
+	var Ractive$unrender = function( css, Hook, log, Promise, removeFromArray, runloop ) {
 
+		var unrenderHook = new Hook( 'unrender' );
 		return function Ractive$unrender() {
 			var this$0 = this;
 			var promise, shouldDestroy;
-			if ( !this.rendered ) {
-				throw new Error( 'ractive.unrender() was called on a Ractive instance that was not rendered' );
+			if ( !this.fragment.rendered ) {
+				log.warn( {
+					debug: this.debug,
+					message: 'ractive.unrender() was called on a Ractive instance that was not rendered'
+				} );
+				return Promise.resolve();
 			}
 			promise = runloop.start( this, true );
 			// If this is a component, and the component isn't marked for destruction,
 			// don't detach nodes from the DOM unnecessarily
-			shouldDestroy = !this.component || this.component.shouldDestroy;
-			shouldDestroy = shouldDestroy || this.shouldDestroy;
+			shouldDestroy = !this.component || this.component.shouldDestroy || this.shouldDestroy;
 			if ( this.constructor.css ) {
 				promise.then( function() {
 					css.remove( this$0.constructor );
@@ -11707,12 +12482,12 @@ exports.unbind = function(el, type, fn, capture){
 				this._animations[ 0 ].stop();
 			}
 			this.fragment.unrender( shouldDestroy );
-			this.rendered = false;
 			removeFromArray( this.el.__ractive_instances__, this );
+			unrenderHook.fire( this );
 			runloop.end();
 			return promise;
 		};
-	}( removeFromArray, runloop, global_css );
+	}( global_css, Ractive$shared_hooks_Hook, log, Promise, removeFromArray, runloop );
 
 	/* Ractive/prototype/unshift.js */
 	var Ractive$unshift = function( makeArrayMethod ) {
@@ -11721,8 +12496,9 @@ exports.unbind = function(el, type, fn, capture){
 	}( Ractive$shared_makeArrayMethod );
 
 	/* Ractive/prototype/update.js */
-	var Ractive$update = function( runloop ) {
+	var Ractive$update = function( Hook, runloop ) {
 
+		var updateHook = new Hook( 'update' );
 		return function Ractive$update( keypath, callback ) {
 			var promise;
 			if ( typeof keypath === 'function' ) {
@@ -11734,18 +12510,19 @@ exports.unbind = function(el, type, fn, capture){
 			promise = runloop.start( this, true );
 			this.viewmodel.mark( keypath );
 			runloop.end();
-			this.fire( 'update', keypath );
+			updateHook.fire( this, keypath );
 			if ( callback ) {
 				promise.then( callback.bind( this ) );
 			}
 			return promise;
 		};
-	}( runloop );
+	}( Ractive$shared_hooks_Hook, runloop );
 
 	/* Ractive/prototype/updateModel.js */
 	var Ractive$updateModel = function( arrayContentsMatch, isEqual ) {
 
-		return function Ractive$updateModel( keypath, cascade ) {
+		var __export;
+		__export = function Ractive$updateModel( keypath, cascade ) {
 			var values;
 			if ( typeof keypath !== 'string' ) {
 				keypath = '';
@@ -11809,6 +12586,7 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			}
 		}
+		return __export;
 	}( arrayContentsMatch, isEqual );
 
 	/* Ractive/prototype.js */
@@ -11869,8 +12647,51 @@ exports.unbind = function(el, type, fn, capture){
 		};
 	}();
 
+	/* Ractive/prototype/shared/hooks/HookQueue.js */
+	var Ractive$shared_hooks_HookQueue = function( Hook ) {
+
+		function HookQueue( event ) {
+			this.hook = new Hook( event );
+			this.inProcess = {};
+			this.queue = {};
+		}
+		HookQueue.prototype = {
+			constructor: HookQueue,
+			begin: function( ractive ) {
+				this.inProcess[ ractive._guid ] = true;
+			},
+			end: function( ractive ) {
+				var parent = ractive._parent;
+				// If this is *isn't* a child of a component that's in process,
+				// it should call methods or fire at this point
+				if ( !parent || !this.inProcess[ parent._guid ] ) {
+					fire( this, ractive );
+				} else {
+					getChildQueue( this.queue, parent ).push( ractive );
+				}
+				delete this.inProcess[ ractive._guid ];
+			}
+		};
+
+		function getChildQueue( queue, ractive ) {
+			return queue[ ractive._guid ] || ( queue[ ractive._guid ] = [] );
+		}
+
+		function fire( hookQueue, ractive ) {
+			var childQueue = getChildQueue( hookQueue.queue, ractive );
+			hookQueue.hook.fire( ractive );
+			// queue is "live" because components can end up being
+			// added while hooks fire on parents that modify data values.
+			while ( childQueue.length ) {
+				fire( hookQueue, childQueue.shift() );
+			}
+			delete hookQueue.queue[ ractive._guid ];
+		}
+		return HookQueue;
+	}( Ractive$shared_hooks_Hook );
+
 	/* viewmodel/prototype/get/arrayAdaptor/processWrapper.js */
-	var viewmodel$get_arrayAdaptor_processWrapper = function( wrapper, array, methodName, spliceSummary ) {
+	var viewmodel$get_arrayAdaptor_processWrapper = function( wrapper, array, methodName, newIndices ) {
 		var root = wrapper.root,
 			keypath = wrapper.keypath;
 		// If this is a sort or reverse, we just do root.set()...
@@ -11879,16 +12700,11 @@ exports.unbind = function(el, type, fn, capture){
 			root.viewmodel.set( keypath, array );
 			return;
 		}
-		if ( !spliceSummary ) {
-			// (presumably we tried to pop from an array of zero length.
-			// in which case there's nothing to do)
-			return;
-		}
-		root.viewmodel.splice( keypath, spliceSummary );
+		root.viewmodel.smartUpdate( keypath, array, newIndices );
 	};
 
 	/* viewmodel/prototype/get/arrayAdaptor/patch.js */
-	var viewmodel$get_arrayAdaptor_patch = function( runloop, defineProperty, getSpliceEquivalent, summariseSpliceOperation, processWrapper ) {
+	var viewmodel$get_arrayAdaptor_patch = function( runloop, defineProperty, getNewIndices, processWrapper ) {
 
 		var patchedArrayProto = [],
 			mutatorMethods = [
@@ -11903,22 +12719,22 @@ exports.unbind = function(el, type, fn, capture){
 			testObj, patchArrayMethods, unpatchArrayMethods;
 		mutatorMethods.forEach( function( methodName ) {
 			var method = function() {
-				var spliceEquivalent, spliceSummary, result, wrapper, i;
-				// push, pop, shift and unshift can all be represented as a splice operation.
-				// this makes life easier later
-				spliceEquivalent = getSpliceEquivalent( this, methodName, Array.prototype.slice.call( arguments ) );
-				spliceSummary = summariseSpliceOperation( this, spliceEquivalent );
+				var SLICE$0 = Array.prototype.slice;
+				var args = SLICE$0.call( arguments, 0 );
+				var newIndices, result, wrapper, i;
+				newIndices = getNewIndices( this, methodName, args );
 				// apply the underlying method
 				result = Array.prototype[ methodName ].apply( this, arguments );
 				// trigger changes
+				runloop.start();
 				this._ractive.setting = true;
 				i = this._ractive.wrappers.length;
 				while ( i-- ) {
 					wrapper = this._ractive.wrappers[ i ];
-					runloop.start( wrapper.root );
-					processWrapper( wrapper, this, methodName, spliceSummary );
-					runloop.end();
+					runloop.addViewmodel( wrapper.root.viewmodel );
+					processWrapper( wrapper, this, methodName, newIndices );
 				}
+				runloop.end();
 				this._ractive.setting = false;
 				return result;
 			};
@@ -11960,7 +12776,7 @@ exports.unbind = function(el, type, fn, capture){
 		}
 		patchArrayMethods.unpatch = unpatchArrayMethods;
 		return patchArrayMethods;
-	}( runloop, defineProperty, getSpliceEquivalent, summariseSpliceOperation, viewmodel$get_arrayAdaptor_processWrapper );
+	}( runloop, defineProperty, getNewIndices, viewmodel$get_arrayAdaptor_processWrapper );
 
 	/* viewmodel/prototype/get/arrayAdaptor.js */
 	var viewmodel$get_arrayAdaptor = function( defineProperty, isArray, patch ) {
@@ -12082,10 +12898,11 @@ exports.unbind = function(el, type, fn, capture){
 	}( viewmodel$get_magicAdaptor, viewmodel$get_arrayAdaptor );
 
 	/* viewmodel/prototype/adapt.js */
-	var viewmodel$adapt = function( config, arrayAdaptor, magicAdaptor, magicArrayAdaptor ) {
+	var viewmodel$adapt = function( config, arrayAdaptor, log, magicAdaptor, magicArrayAdaptor ) {
 
+		var __export;
 		var prefixers = {};
-		return function Viewmodel$adapt( keypath, value ) {
+		__export = function Viewmodel$adapt( keypath, value ) {
 			var ractive = this.ractive,
 				len, i, adaptor, wrapped;
 			// Do we have an adaptor for this value?
@@ -12097,7 +12914,15 @@ exports.unbind = function(el, type, fn, capture){
 				if ( typeof adaptor === 'string' ) {
 					var found = config.registries.adaptors.find( ractive, adaptor );
 					if ( !found ) {
-						throw new Error( 'Missing adaptor "' + adaptor + '"' );
+						// will throw. "return" for safety, if we downgrade :)
+						return log.critical( {
+							debug: ractive.debug,
+							message: 'missingPlugin',
+							args: {
+								plugin: 'adaptor',
+								name: adaptor
+							}
+						} );
 					}
 					adaptor = ractive.adapt[ i ] = found;
 				}
@@ -12153,7 +12978,8 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return prefixers[ rootKeypath ];
 		}
-	}( config, viewmodel$get_arrayAdaptor, viewmodel$get_magicAdaptor, viewmodel$get_magicArrayAdaptor );
+		return __export;
+	}( config, viewmodel$get_arrayAdaptor, log, viewmodel$get_magicAdaptor, viewmodel$get_magicArrayAdaptor );
 
 	/* viewmodel/helpers/getUpstreamChanges.js */
 	var getUpstreamChanges = function getUpstreamChanges( changes ) {
@@ -12177,6 +13003,7 @@ exports.unbind = function(el, type, fn, capture){
 	/* viewmodel/prototype/applyChanges/getPotentialWildcardMatches.js */
 	var viewmodel$applyChanges_getPotentialWildcardMatches = function() {
 
+		var __export;
 		var starMaps = {};
 		// This function takes a keypath such as 'foo.bar.baz', and returns
 		// all the variants of that keypath that include a wildcard in place
@@ -12184,7 +13011,7 @@ exports.unbind = function(el, type, fn, capture){
 		// These are then checked against the dependants map (ractive.viewmodel.depsMap)
 		// to see if any pattern observers are downstream of one or more of
 		// these wildcard keypaths (e.g. 'foo.bar.*.status')
-		return function getPotentialWildcardMatches( keypath ) {
+		__export = function getPotentialWildcardMatches( keypath ) {
 			var keys, starMap, mapper, result;
 			keys = keypath.split( '.' );
 			starMap = getStarMap( keys.length );
@@ -12223,13 +13050,15 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			return starMaps[ length ];
 		}
+		return __export;
 	}();
 
 	/* viewmodel/prototype/applyChanges/notifyPatternObservers.js */
 	var viewmodel$applyChanges_notifyPatternObservers = function( getPotentialWildcardMatches ) {
 
+		var __export;
 		var lastKey = /[^\.]+$/;
-		return notifyPatternObservers;
+		__export = notifyPatternObservers;
 
 		function notifyPatternObservers( viewmodel, keypath, onlyDirect ) {
 			var potentialWildcardMatches;
@@ -12266,90 +13095,136 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			} );
 		}
+		return __export;
 	}( viewmodel$applyChanges_getPotentialWildcardMatches );
 
 	/* viewmodel/prototype/applyChanges.js */
 	var viewmodel$applyChanges = function( getUpstreamChanges, notifyPatternObservers ) {
 
-		var dependantGroups = [
-			'observers',
-			'default'
-		];
-		return function Viewmodel$applyChanges() {
+		var __export;
+		__export = function Viewmodel$applyChanges() {
 			var this$0 = this;
 			var self = this,
-				changes, upstreamChanges, allChanges = [],
-				computations, addComputations, cascade, hash = {};
-			if ( !this.changes.length ) {
+				changes, upstreamChanges, hash = {};
+			changes = this.changes;
+			if ( !changes.length ) {
 				// TODO we end up here on initial render. Perhaps we shouldn't?
 				return;
 			}
-			addComputations = function( keypath ) {
-				var newComputations;
-				if ( newComputations = self.deps.computed[ keypath ] ) {
-					addNewItems( computations, newComputations );
+
+			function cascade( keypath ) {
+				var map, dependants, keys;
+				if ( self.noCascade.hasOwnProperty( keypath ) ) {
+					return;
 				}
-			};
-			cascade = function( keypath ) {
-				var map;
-				addComputations( keypath );
+				if ( dependants = self.deps.computed[ keypath ] ) {
+					dependants.forEach( invalidate );
+					keys = dependants.map( getKey );
+					keys.forEach( mark );
+					keys.forEach( cascade );
+				}
 				if ( map = self.depsMap.computed[ keypath ] ) {
 					map.forEach( cascade );
 				}
-			};
-			// Find computations and evaluators that are invalidated by
-			// these changes. If they have changed, add them to the
-			// list of changes. Lather, rinse and repeat until the
-			// system is settled
-			do {
-				changes = this.changes;
-				addNewItems( allChanges, changes );
-				this.changes = [];
-				computations = [];
-				upstreamChanges = getUpstreamChanges( changes );
-				upstreamChanges.forEach( addComputations );
-				changes.forEach( cascade );
-				computations.forEach( updateComputation );
-			} while ( this.changes.length );
-			upstreamChanges = getUpstreamChanges( allChanges );
+			}
+
+			function mark( keypath ) {
+				self.mark( keypath );
+			}
+			changes.forEach( cascade );
+			upstreamChanges = getUpstreamChanges( changes );
+			upstreamChanges.forEach( function( keypath ) {
+				var dependants, keys;
+				if ( dependants = self.deps.computed[ keypath ] ) {
+					dependants.forEach( invalidate );
+					keys = dependants.map( getKey );
+					keys.forEach( mark );
+					keys.forEach( cascade );
+				}
+			} );
+			this.changes = [];
 			// Pattern observers are a weird special case
 			if ( this.patternObservers.length ) {
 				upstreamChanges.forEach( function( keypath ) {
 					return notifyPatternObservers( this$0, keypath, true );
 				} );
-				allChanges.forEach( function( keypath ) {
+				changes.forEach( function( keypath ) {
 					return notifyPatternObservers( this$0, keypath );
 				} );
 			}
-			dependantGroups.forEach( function( group ) {
-				if ( !this$0.deps[ group ] ) {
-					return;
-				}
+			if ( this.deps.observers ) {
 				upstreamChanges.forEach( function( keypath ) {
-					return notifyUpstreamDependants( this$0, keypath, group );
+					return notifyUpstreamDependants( this$0, null, keypath, 'observers' );
 				} );
-				notifyAllDependants( this$0, allChanges, group );
-			} );
+				notifyAllDependants( this, changes, 'observers' );
+			}
+			if ( this.deps[ 'default' ] ) {
+				var bindings = [];
+				upstreamChanges.forEach( function( keypath ) {
+					return notifyUpstreamDependants( this$0, bindings, keypath, 'default' );
+				} );
+				if ( bindings.length ) {
+					notifyBindings( this, bindings, changes );
+				}
+				notifyAllDependants( this, changes, 'default' );
+			}
 			// Return a hash of keypaths to updated values
-			allChanges.forEach( function( keypath ) {
+			changes.forEach( function( keypath ) {
 				hash[ keypath ] = this$0.get( keypath );
 			} );
 			this.implicitChanges = {};
+			this.noCascade = {};
 			return hash;
 		};
 
-		function updateComputation( computation ) {
-			computation.update();
+		function invalidate( computation ) {
+			computation.invalidate();
 		}
 
-		function notifyUpstreamDependants( viewmodel, keypath, groupName ) {
+		function getKey( computation ) {
+			return computation.key;
+		}
+
+		function notifyUpstreamDependants( viewmodel, bindings, keypath, groupName ) {
 			var dependants, value;
 			if ( dependants = findDependants( viewmodel, keypath, groupName ) ) {
 				value = viewmodel.get( keypath );
 				dependants.forEach( function( d ) {
-					return d.setValue( value );
+					// don't "set" the parent value, refine it
+					// i.e. not data = value, but data[foo] = fooValue
+					if ( bindings && d.refineValue ) {
+						bindings.push( d );
+					} else {
+						d.setValue( value );
+					}
 				} );
 			}
+		}
+
+		function notifyBindings( viewmodel, bindings, changes ) {
+			bindings.forEach( function( binding ) {
+				var useSet = false,
+					i = 0,
+					length = changes.length,
+					refinements = [];
+				while ( i < length ) {
+					var keypath = changes[ i ];
+					if ( keypath === binding.keypath ) {
+						useSet = true;
+						break;
+					}
+					if ( keypath.slice( 0, binding.keypath.length ) === binding.keypath ) {
+						refinements.push( keypath );
+					}
+					i++;
+				}
+				if ( useSet ) {
+					binding.setValue( viewmodel.get( binding.keypath ) );
+				}
+				if ( refinements.length ) {
+					binding.refineValue( refinements );
+				}
+			} );
 		}
 
 		function notifyAllDependants( viewmodel, keypaths, groupName ) {
@@ -12391,36 +13266,28 @@ exports.unbind = function(el, type, fn, capture){
 			var group = viewmodel.deps[ groupName ];
 			return group ? group[ keypath ] : null;
 		}
-
-		function addNewItems( arr, items ) {
-			items.forEach( function( item ) {
-				if ( arr.indexOf( item ) === -1 ) {
-					arr.push( item );
-				}
-			} );
-		}
+		return __export;
 	}( getUpstreamChanges, viewmodel$applyChanges_notifyPatternObservers );
 
 	/* viewmodel/prototype/capture.js */
 	var viewmodel$capture = function Viewmodel$capture() {
-		this.capturing = true;
-		this.captured = [];
+		this.captureGroups.push( [] );
 	};
 
 	/* viewmodel/prototype/clearCache.js */
 	var viewmodel$clearCache = function Viewmodel$clearCache( keypath, dontTeardownWrapper ) {
-		var cacheMap, wrapper, computation;
+		var cacheMap, wrapper;
 		if ( !dontTeardownWrapper ) {
 			// Is there a wrapped property at this keypath?
 			if ( wrapper = this.wrapped[ keypath ] ) {
 				// Did we unwrap it?
 				if ( wrapper.teardown() !== false ) {
+					// Is this right?
+					// What's the meaning of returning false from teardown?
+					// Could there be a GC ramification if this is a "real" ractive.teardown()?
 					this.wrapped[ keypath ] = null;
 				}
 			}
-		}
-		if ( computation = this.computations[ keypath ] ) {
-			computation.compute();
 		}
 		this.cache[ keypath ] = undefined;
 		if ( cacheMap = this.cacheMap[ keypath ] ) {
@@ -12429,6 +13296,192 @@ exports.unbind = function(el, type, fn, capture){
 			}
 		}
 	};
+
+	/* viewmodel/Computation/getComputationSignature.js */
+	var getComputationSignature = function() {
+
+		var __export;
+		var pattern = /\$\{([^\}]+)\}/g;
+		__export = function( signature ) {
+			if ( typeof signature === 'function' ) {
+				return {
+					get: signature
+				};
+			}
+			if ( typeof signature === 'string' ) {
+				return {
+					get: createFunctionFromString( signature )
+				};
+			}
+			if ( typeof signature === 'object' && typeof signature.get === 'string' ) {
+				signature = {
+					get: createFunctionFromString( signature.get ),
+					set: signature.set
+				};
+			}
+			return signature;
+		};
+
+		function createFunctionFromString( signature ) {
+			var functionBody = 'var __ractive=this;return(' + signature.replace( pattern, function( match, keypath ) {
+				return '__ractive.get("' + keypath + '")';
+			} ) + ')';
+			return new Function( functionBody );
+		}
+		return __export;
+	}();
+
+	/* viewmodel/Computation/Computation.js */
+	var Computation = function( log, isEqual ) {
+
+		var Computation = function( ractive, key, signature ) {
+			var this$0 = this;
+			this.ractive = ractive;
+			this.viewmodel = ractive.viewmodel;
+			this.key = key;
+			this.getter = signature.get;
+			this.setter = signature.set;
+			this.hardDeps = signature.deps || [];
+			this.softDeps = [];
+			this.depValues = {};
+			if ( this.hardDeps ) {
+				this.hardDeps.forEach( function( d ) {
+					return ractive.viewmodel.register( d, this$0, 'computed' );
+				} );
+			}
+			this._dirty = this._firstRun = true;
+		};
+		Computation.prototype = {
+			constructor: Computation,
+			init: function() {
+				var initial;
+				this.bypass = true;
+				initial = this.ractive.viewmodel.get( this.key );
+				this.ractive.viewmodel.clearCache( this.key );
+				this.bypass = false;
+				if ( this.setter && initial !== undefined ) {
+					this.set( initial );
+				}
+			},
+			invalidate: function() {
+				this._dirty = true;
+			},
+			get: function() {
+				var this$0 = this;
+				var ractive, newDeps, dependenciesChanged, dependencyValuesChanged = false;
+				if ( this.getting ) {
+					// prevent double-computation (e.g. caused by array mutation inside computation)
+					return;
+				}
+				this.getting = true;
+				if ( this._dirty ) {
+					ractive = this.ractive;
+					// determine whether the inputs have changed, in case this depends on
+					// other computed values
+					if ( this._firstRun || !this.hardDeps.length && !this.softDeps.length ) {
+						dependencyValuesChanged = true;
+					} else {
+						[
+							this.hardDeps,
+							this.softDeps
+						].forEach( function( deps ) {
+							var keypath, value, i;
+							if ( dependencyValuesChanged ) {
+								return;
+							}
+							i = deps.length;
+							while ( i-- ) {
+								keypath = deps[ i ];
+								value = ractive.viewmodel.get( keypath );
+								if ( !isEqual( value, this$0.depValues[ keypath ] ) ) {
+									this$0.depValues[ keypath ] = value;
+									dependencyValuesChanged = true;
+									return;
+								}
+							}
+						} );
+					}
+					if ( dependencyValuesChanged ) {
+						ractive.viewmodel.capture();
+						try {
+							this.value = this.getter.call( ractive );
+						} catch ( err ) {
+							log.warn( {
+								debug: ractive.debug,
+								message: 'failedComputation',
+								args: {
+									key: this.key,
+									err: err.message || err
+								}
+							} );
+							this.value = void 0;
+						}
+						newDeps = ractive.viewmodel.release();
+						dependenciesChanged = this.updateDependencies( newDeps );
+						if ( dependenciesChanged ) {
+							[
+								this.hardDeps,
+								this.softDeps
+							].forEach( function( deps ) {
+								deps.forEach( function( keypath ) {
+									this$0.depValues[ keypath ] = ractive.viewmodel.get( keypath );
+								} );
+							} );
+						}
+					}
+					this._dirty = false;
+				}
+				this.getting = this._firstRun = false;
+				return this.value;
+			},
+			set: function( value ) {
+				if ( this.setting ) {
+					this.value = value;
+					return;
+				}
+				if ( !this.setter ) {
+					throw new Error( 'Computed properties without setters are read-only. (This may change in a future version of Ractive!)' );
+				}
+				this.setter.call( this.ractive, value );
+			},
+			updateDependencies: function( newDeps ) {
+				var i, oldDeps, keypath, dependenciesChanged;
+				oldDeps = this.softDeps;
+				// remove dependencies that are no longer used
+				i = oldDeps.length;
+				while ( i-- ) {
+					keypath = oldDeps[ i ];
+					if ( newDeps.indexOf( keypath ) === -1 ) {
+						dependenciesChanged = true;
+						this.viewmodel.unregister( keypath, this, 'computed' );
+					}
+				}
+				// create references for any new dependencies
+				i = newDeps.length;
+				while ( i-- ) {
+					keypath = newDeps[ i ];
+					if ( oldDeps.indexOf( keypath ) === -1 && ( !this.hardDeps || this.hardDeps.indexOf( keypath ) === -1 ) ) {
+						dependenciesChanged = true;
+						this.viewmodel.register( keypath, this, 'computed' );
+					}
+				}
+				if ( dependenciesChanged ) {
+					this.softDeps = newDeps.slice();
+				}
+				return dependenciesChanged;
+			}
+		};
+		return Computation;
+	}( log, isEqual );
+
+	/* viewmodel/prototype/compute.js */
+	var viewmodel$compute = function( getComputationSignature, Computation ) {
+
+		return function Viewmodel$compute( key, signature ) {
+			signature = getComputationSignature( signature );
+			return this.computations[ key ] = new Computation( this.ractive, key, signature );
+		};
+	}( getComputationSignature, Computation );
 
 	/* viewmodel/prototype/get/FAILED_LOOKUP.js */
 	var viewmodel$get_FAILED_LOOKUP = {
@@ -12463,27 +13516,31 @@ exports.unbind = function(el, type, fn, capture){
 	}( removeFromArray, runloop );
 
 	/* viewmodel/prototype/get.js */
-	var viewmodel$get = function( FAILED_LOOKUP, UnresolvedImplicitDependency ) {
+	var viewmodel$get = function( isNumeric, FAILED_LOOKUP, UnresolvedImplicitDependency ) {
 
+		var __export;
 		var empty = {};
-		return function Viewmodel$get( keypath ) {
+		__export = function Viewmodel$get( keypath ) {
 			var options = arguments[ 1 ];
 			if ( options === void 0 )
 				options = empty;
 			var ractive = this.ractive,
 				cache = this.cache,
-				value, computation, wrapped, evaluator;
+				value, computation, wrapped, captureGroup;
+			if ( keypath[ 0 ] === '@' ) {
+				value = keypath.slice( 1 );
+				return isNumeric( value ) ? +value : value;
+			}
 			if ( cache[ keypath ] === undefined ) {
 				// Is this a computed property?
-				if ( computation = this.computations[ keypath ] ) {
-					value = computation.value;
+				if ( ( computation = this.computations[ keypath ] ) && !computation.bypass ) {
+					value = computation.get();
+					this.adapt( keypath, value );
 				} else if ( wrapped = this.wrapped[ keypath ] ) {
 					value = wrapped.value;
 				} else if ( !keypath ) {
 					this.adapt( '', ractive.data );
 					value = ractive.data;
-				} else if ( evaluator = this.evaluators[ keypath ] ) {
-					value = evaluator.value;
 				} else {
 					value = retrieve( this, keypath );
 				}
@@ -12494,14 +13551,16 @@ exports.unbind = function(el, type, fn, capture){
 			if ( options.evaluateWrapped && ( wrapped = this.wrapped[ keypath ] ) ) {
 				value = wrapped.get();
 			}
-			// capture the keypath, if we're inside a computation or evaluator
-			if ( options.capture && this.capturing && this.captured.indexOf( keypath ) === -1 ) {
-				this.captured.push( keypath );
-				// if we couldn't resolve the keypath, we need to make it as a failed
-				// lookup, so that the evaluator updates correctly once we CAN
-				// resolve the keypath
-				if ( value === FAILED_LOOKUP && this.unresolvedImplicitDependencies[ keypath ] !== true ) {
-					new UnresolvedImplicitDependency( this, keypath );
+			// capture the keypath, if we're inside a computation
+			if ( options.capture && ( captureGroup = this.captureGroups[ this.captureGroups.length - 1 ] ) ) {
+				if ( !~captureGroup.indexOf( keypath ) ) {
+					captureGroup.push( keypath );
+					// if we couldn't resolve the keypath, we need to make it as a failed
+					// lookup, so that the computation updates correctly once we CAN
+					// resolve the keypath
+					if ( value === FAILED_LOOKUP && this.unresolvedImplicitDependencies[ keypath ] !== true ) {
+						new UnresolvedImplicitDependency( this, keypath );
+					}
 				}
 			}
 			return value === FAILED_LOOKUP ? void 0 : value;
@@ -12539,19 +13598,48 @@ exports.unbind = function(el, type, fn, capture){
 			viewmodel.cache[ keypath ] = value;
 			return value;
 		}
-	}( viewmodel$get_FAILED_LOOKUP, viewmodel$get_UnresolvedImplicitDependency );
+		return __export;
+	}( isNumeric, viewmodel$get_FAILED_LOOKUP, viewmodel$get_UnresolvedImplicitDependency );
+
+	/* viewmodel/prototype/init.js */
+	var viewmodel$init = function() {
+
+		var __export;
+		__export = function Viewmodel$init() {
+			var key, computation, computations = [];
+			for ( key in this.ractive.computed ) {
+				computation = this.compute( key, this.ractive.computed[ key ] );
+				computations.push( computation );
+			}
+			computations.forEach( init );
+		};
+
+		function init( computation ) {
+			computation.init();
+		}
+		return __export;
+	}();
 
 	/* viewmodel/prototype/mark.js */
-	var viewmodel$mark = function Viewmodel$mark( keypath, isImplicitChange ) {
+	var viewmodel$mark = function Viewmodel$mark( keypath, options ) {
+		var computation;
 		// implicit changes (i.e. `foo.length` on `ractive.push('foo',42)`)
 		// should not be picked up by pattern observers
-		if ( isImplicitChange ) {
-			this.implicitChanges[ keypath ] = true;
+		if ( options ) {
+			if ( options.implicit ) {
+				this.implicitChanges[ keypath ] = true;
+			}
+			if ( options.noCascade ) {
+				this.noCascade[ keypath ] = true;
+			}
+		}
+		if ( computation = this.computations[ keypath ] ) {
+			computation.invalidate();
 		}
 		if ( this.changes.indexOf( keypath ) === -1 ) {
 			this.changes.push( keypath );
-			this.clearCache( keypath );
 		}
+		this.clearCache( keypath );
 	};
 
 	/* viewmodel/prototype/merge/mapOldToNewIndex.js */
@@ -12582,17 +13670,16 @@ exports.unbind = function(el, type, fn, capture){
 			usedIndices[ index ] = true;
 			return index;
 		} );
-		newIndices.unchanged = !changed;
 		return newIndices;
 	};
 
 	/* viewmodel/prototype/merge.js */
-	var viewmodel$merge = function( types, warn, mapOldToNewIndex ) {
+	var viewmodel$merge = function( warn, mapOldToNewIndex ) {
 
+		var __export;
 		var comparators = {};
-		return function Viewmodel$merge( keypath, currentArray, array, options ) {
-			var this$0 = this;
-			var oldArray, newArray, comparator, newIndices, dependants;
+		__export = function Viewmodel$merge( keypath, currentArray, array, options ) {
+			var oldArray, newArray, comparator, newIndices;
 			this.mark( keypath );
 			if ( options && options.compare ) {
 				comparator = getComparatorFunction( options.compare );
@@ -12617,28 +13704,8 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			// find new indices for members of oldArray
 			newIndices = mapOldToNewIndex( oldArray, newArray );
-			// Indices that are being removed should be marked as dirty
-			newIndices.forEach( function( newIndex, oldIndex ) {
-				if ( newIndex === -1 ) {
-					this$0.mark( keypath + '.' + oldIndex );
-				}
-			} );
-			// Update the model
-			// TODO allow existing array to be updated in place, rather than replaced?
-			this.set( keypath, array, true );
-			if ( dependants = this.deps[ 'default' ][ keypath ] ) {
-				dependants.filter( canMerge ).forEach( function( dependant ) {
-					return dependant.merge( newIndices );
-				} );
-			}
-			if ( currentArray.length !== array.length ) {
-				this.mark( keypath + '.length', true );
-			}
+			this.smartUpdate( keypath, array, newIndices, currentArray.length !== array.length );
 		};
-
-		function canMerge( dependant ) {
-			return typeof dependant.merge === 'function' && ( !dependant.subtype || dependant.subtype === types.SECTION_EACH );
-		}
 
 		function stringify( item ) {
 			return JSON.stringify( item );
@@ -12664,16 +13731,18 @@ exports.unbind = function(el, type, fn, capture){
 			}
 			throw new Error( 'The `compare` option must be a function, or a string representing an identifying field (or `true` to use JSON.stringify)' );
 		}
-	}( types, warn, viewmodel$merge_mapOldToNewIndex );
+		return __export;
+	}( warn, viewmodel$merge_mapOldToNewIndex );
 
 	/* viewmodel/prototype/register.js */
 	var viewmodel$register = function() {
 
-		return function Viewmodel$register( keypath, dependant ) {
+		var __export;
+		__export = function Viewmodel$register( keypath, dependant ) {
 			var group = arguments[ 2 ];
 			if ( group === void 0 )
 				group = 'default';
-			var depsByKeypath, deps, evaluator;
+			var depsByKeypath, deps;
 			if ( dependant.isStatic ) {
 				return;
 			}
@@ -12682,12 +13751,6 @@ exports.unbind = function(el, type, fn, capture){
 			deps.push( dependant );
 			if ( !keypath ) {
 				return;
-			}
-			if ( evaluator = this.evaluators[ keypath ] ) {
-				if ( !evaluator.dependants ) {
-					evaluator.wake();
-				}
-				evaluator.dependants += 1;
 			}
 			updateDependantsMap( this, keypath, group );
 		};
@@ -12709,28 +13772,33 @@ exports.unbind = function(el, type, fn, capture){
 				keypath = parentKeypath;
 			}
 		}
+		return __export;
 	}();
 
 	/* viewmodel/prototype/release.js */
 	var viewmodel$release = function Viewmodel$release() {
-		this.capturing = false;
-		return this.captured;
+		return this.captureGroups.pop();
 	};
 
 	/* viewmodel/prototype/set.js */
 	var viewmodel$set = function( isEqual, createBranch ) {
 
-		return function Viewmodel$set( keypath, value, silent ) {
-			var keys, lastKey, parentKeypath, parentValue, computation, wrapper, evaluator, dontTeardownWrapper;
+		var __export;
+		__export = function Viewmodel$set( keypath, value, silent ) {
+			var computation, wrapper, dontTeardownWrapper;
+			computation = this.computations[ keypath ];
+			if ( computation ) {
+				if ( computation.setting ) {
+					// let the other computation set() handle things...
+					return;
+				}
+				computation.set( value );
+				value = computation.get();
+			}
 			if ( isEqual( this.cache[ keypath ], value ) ) {
 				return;
 			}
-			computation = this.computations[ keypath ];
 			wrapper = this.wrapped[ keypath ];
-			evaluator = this.evaluators[ keypath ];
-			if ( computation && !computation.setting ) {
-				computation.set( value );
-			}
 			// If we have a wrapper with a `reset()` method, we try and use it. If the
 			// `reset()` method returns false, the wrapper should be torn down, and
 			// (most likely) a new one should be created later
@@ -12740,27 +13808,8 @@ exports.unbind = function(el, type, fn, capture){
 					value = wrapper.get();
 				}
 			}
-			// Update evaluator value. This may be from the evaluator itself, or
-			// it may be from the wrapper that wraps an evaluator's result - it
-			// doesn't matter
-			if ( evaluator ) {
-				evaluator.value = value;
-			}
-			if ( !computation && !evaluator && !dontTeardownWrapper ) {
-				keys = keypath.split( '.' );
-				lastKey = keys.pop();
-				parentKeypath = keys.join( '.' );
-				wrapper = this.wrapped[ parentKeypath ];
-				if ( wrapper && wrapper.set ) {
-					wrapper.set( lastKey, value );
-				} else {
-					parentValue = wrapper ? wrapper.get() : this.get( parentKeypath );
-					if ( !parentValue ) {
-						parentValue = createBranch( lastKey );
-						this.set( parentKeypath, parentValue, true );
-					}
-					parentValue[ lastKey ] = value;
-				}
+			if ( !computation && !dontTeardownWrapper ) {
+				resolveSet( this, keypath, value );
 			}
 			if ( !silent ) {
 				this.mark( keypath );
@@ -12771,33 +13820,89 @@ exports.unbind = function(el, type, fn, capture){
 				this.clearCache( keypath );
 			}
 		};
+
+		function resolveSet( viewmodel, keypath, value ) {
+			var keys, lastKey, parentKeypath, wrapper, parentValue, wrapperSet, valueSet;
+			wrapperSet = function() {
+				if ( wrapper.set ) {
+					wrapper.set( lastKey, value );
+				} else {
+					parentValue = wrapper.get();
+					valueSet();
+				}
+			};
+			valueSet = function() {
+				if ( !parentValue ) {
+					parentValue = createBranch( lastKey );
+					viewmodel.set( parentKeypath, parentValue, true );
+				}
+				parentValue[ lastKey ] = value;
+			};
+			keys = keypath.split( '.' );
+			lastKey = keys.pop();
+			parentKeypath = keys.join( '.' );
+			wrapper = viewmodel.wrapped[ parentKeypath ];
+			if ( wrapper ) {
+				wrapperSet();
+			} else {
+				parentValue = viewmodel.get( parentKeypath );
+				// may have been wrapped via the above .get()
+				// call on viewmodel if this is first access via .set()!
+				if ( wrapper = viewmodel.wrapped[ parentKeypath ] ) {
+					wrapperSet();
+				} else {
+					valueSet();
+				}
+			}
+		}
+		return __export;
 	}( isEqual, createBranch );
 
-	/* viewmodel/prototype/splice.js */
-	var viewmodel$splice = function( types ) {
+	/* viewmodel/prototype/smartUpdate.js */
+	var viewmodel$smartUpdate = function() {
 
-		return function Viewmodel$splice( keypath, spliceSummary ) {
-			var viewmodel = this,
-				i, dependants;
-			// Mark changed keypaths
-			for ( i = spliceSummary.rangeStart; i < spliceSummary.rangeEnd; i += 1 ) {
-				viewmodel.mark( keypath + '.' + i );
-			}
-			if ( spliceSummary.balance ) {
-				viewmodel.mark( keypath + '.length', true );
-			}
-			// Trigger splice operations
-			if ( dependants = viewmodel.deps[ 'default' ][ keypath ] ) {
-				dependants.filter( canSplice ).forEach( function( dependant ) {
-					return dependant.splice( spliceSummary );
+		var __export;
+		var implicitOption = {
+				implicit: true
+			},
+			noCascadeOption = {
+				noCascade: true
+			};
+		__export = function Viewmodel$smartUpdate( keypath, array, newIndices ) {
+			var this$0 = this;
+			var dependants, oldLength;
+			oldLength = newIndices.length;
+			// Indices that are being removed should be marked as dirty
+			newIndices.forEach( function( newIndex, oldIndex ) {
+				if ( newIndex === -1 ) {
+					this$0.mark( keypath + '.' + oldIndex, noCascadeOption );
+				}
+			} );
+			// Update the model
+			// TODO allow existing array to be updated in place, rather than replaced?
+			this.set( keypath, array, true );
+			if ( dependants = this.deps[ 'default' ][ keypath ] ) {
+				dependants.filter( canShuffle ).forEach( function( d ) {
+					return d.shuffle( newIndices, array );
 				} );
+			}
+			if ( oldLength !== array.length ) {
+				this.mark( keypath + '.length', implicitOption );
+				for ( var i = oldLength; i < array.length; i += 1 ) {
+					this.mark( keypath + '.' + i );
+				}
+				// don't allow removed indexes beyond end of new array to trigger recomputations
+				for ( var i$0 = array.length; i$0 < oldLength; i$0 += 1 ) {
+					this.mark( keypath + '.' + i$0, noCascadeOption );
+				}
 			}
 		};
 
-		function canSplice( dependant ) {
-			return dependant.type === types.SECTION && ( !dependant.subtype || dependant.subtype === types.SECTION_EACH ) && dependant.rendered;
+		function canShuffle( dependant ) {
+			return typeof dependant.shuffle === 'function';
 		}
-	}( types );
+		return __export;
+	}();
 
 	/* viewmodel/prototype/teardown.js */
 	var viewmodel$teardown = function Viewmodel$teardown() {
@@ -12817,11 +13922,12 @@ exports.unbind = function(el, type, fn, capture){
 	/* viewmodel/prototype/unregister.js */
 	var viewmodel$unregister = function() {
 
-		return function Viewmodel$unregister( keypath, dependant ) {
+		var __export;
+		__export = function Viewmodel$unregister( keypath, dependant ) {
 			var group = arguments[ 2 ];
 			if ( group === void 0 )
 				group = 'default';
-			var deps, index, evaluator;
+			var deps, index;
 			if ( dependant.isStatic ) {
 				return;
 			}
@@ -12833,12 +13939,6 @@ exports.unbind = function(el, type, fn, capture){
 			deps.splice( index, 1 );
 			if ( !keypath ) {
 				return;
-			}
-			if ( evaluator = this.evaluators[ keypath ] ) {
-				evaluator.dependants -= 1;
-				if ( !evaluator.dependants ) {
-					evaluator.sleep();
-				}
 			}
 			updateDependantsMap( this, keypath, group );
 		};
@@ -12861,106 +13961,8 @@ exports.unbind = function(el, type, fn, capture){
 				keypath = parentKeypath;
 			}
 		}
+		return __export;
 	}();
-
-	/* viewmodel/Computation/getComputationSignature.js */
-	var getComputationSignature = function() {
-
-		var pattern = /\$\{([^\}]+)\}/g;
-		return function( signature ) {
-			if ( typeof signature === 'function' ) {
-				return {
-					get: signature
-				};
-			}
-			if ( typeof signature === 'string' ) {
-				return {
-					get: createFunctionFromString( signature )
-				};
-			}
-			if ( typeof signature === 'object' && typeof signature.get === 'string' ) {
-				signature = {
-					get: createFunctionFromString( signature.get ),
-					set: signature.set
-				};
-			}
-			return signature;
-		};
-
-		function createFunctionFromString( signature ) {
-			var functionBody = 'var __ractive=this;return(' + signature.replace( pattern, function( match, keypath ) {
-				return '__ractive.get("' + keypath + '")';
-			} ) + ')';
-			return new Function( functionBody );
-		}
-	}();
-
-	/* viewmodel/Computation/Computation.js */
-	var Computation = function( log, isEqual, diff ) {
-
-		var Computation = function( ractive, key, signature ) {
-			this.ractive = ractive;
-			this.viewmodel = ractive.viewmodel;
-			this.key = key;
-			this.getter = signature.get;
-			this.setter = signature.set;
-			this.dependencies = [];
-			this.update();
-		};
-		Computation.prototype = {
-			set: function( value ) {
-				if ( this.setting ) {
-					this.value = value;
-					return;
-				}
-				if ( !this.setter ) {
-					throw new Error( 'Computed properties without setters are read-only. (This may change in a future version of Ractive!)' );
-				}
-				this.setter.call( this.ractive, value );
-			},
-			// returns `false` if the computation errors
-			compute: function() {
-				var ractive, errored, newDependencies;
-				ractive = this.ractive;
-				ractive.viewmodel.capture();
-				try {
-					this.value = this.getter.call( ractive );
-				} catch ( err ) {
-					log.warn( {
-						debug: ractive.debug,
-						message: 'failedComputation',
-						args: {
-							key: this.key,
-							err: err.message || err
-						}
-					} );
-					errored = true;
-				}
-				newDependencies = ractive.viewmodel.release();
-				diff( this, this.dependencies, newDependencies );
-				return errored ? false : true;
-			},
-			update: function() {
-				var oldValue = this.value;
-				if ( this.compute() && !isEqual( this.value, oldValue ) ) {
-					this.ractive.viewmodel.mark( this.key );
-				}
-			}
-		};
-		return Computation;
-	}( log, isEqual, diff );
-
-	/* viewmodel/Computation/createComputations.js */
-	var createComputations = function( getComputationSignature, Computation ) {
-
-		return function createComputations( ractive, computed ) {
-			var key, signature;
-			for ( key in computed ) {
-				signature = getComputationSignature( computed[ key ] );
-				ractive.viewmodel.computations[ key ] = new Computation( ractive, key, signature );
-			}
-		};
-	}( getComputationSignature, Computation );
 
 	/* viewmodel/adaptConfig.js */
 	var adaptConfig = function() {
@@ -13015,10 +14017,8 @@ exports.unbind = function(el, type, fn, capture){
 	}();
 
 	/* viewmodel/Viewmodel.js */
-	var Viewmodel = function( create, adapt, applyChanges, capture, clearCache, get, mark, merge, register, release, set, splice, teardown, unregister, createComputations, adaptConfig ) {
+	var Viewmodel = function( create, adapt, applyChanges, capture, clearCache, compute, get, init, mark, merge, register, release, set, smartUpdate, teardown, unregister, adaptConfig ) {
 
-		// TODO: fix our ES6 modules so we can have multiple exports
-		// then this magic check can be reused by magicAdaptor
 		var noMagic;
 		try {
 			Object.defineProperty( {}, 'test', {
@@ -13031,7 +14031,6 @@ exports.unbind = function(el, type, fn, capture){
 			this.ractive = ractive;
 			// TODO eventually, we shouldn't need this reference
 			Viewmodel.extend( ractive.constructor, ractive );
-			//this.ractive.data
 			this.cache = {};
 			// we need to be able to use hasOwnProperty, so can't inherit from null
 			this.cacheMap = create( null );
@@ -13045,13 +14044,12 @@ exports.unbind = function(el, type, fn, capture){
 			};
 			this.patternObservers = [];
 			this.wrapped = create( null );
-			// TODO these are conceptually very similar. Can they be merged somehow?
-			this.evaluators = create( null );
 			this.computations = create( null );
-			this.captured = null;
+			this.captureGroups = [];
 			this.unresolvedImplicitDependencies = [];
 			this.changes = [];
 			this.implicitChanges = {};
+			this.noCascade = {};
 		};
 		Viewmodel.extend = function( Parent, instance ) {
 			if ( instance.magic && noMagic ) {
@@ -13065,66 +14063,46 @@ exports.unbind = function(el, type, fn, capture){
 			applyChanges: applyChanges,
 			capture: capture,
 			clearCache: clearCache,
+			compute: compute,
 			get: get,
+			init: init,
 			mark: mark,
 			merge: merge,
 			register: register,
 			release: release,
 			set: set,
-			splice: splice,
+			smartUpdate: smartUpdate,
 			teardown: teardown,
-			unregister: unregister,
-			// createComputations, in the computations, may call back through get or set
-			// of ractive. So, for now, we delay creation of computed from constructor.
-			// on option would be to have the Computed class be lazy about using .update()
-			compute: function() {
-				createComputations( this.ractive, this.ractive.computed );
-			}
+			unregister: unregister
 		};
 		return Viewmodel;
-	}( create, viewmodel$adapt, viewmodel$applyChanges, viewmodel$capture, viewmodel$clearCache, viewmodel$get, viewmodel$mark, viewmodel$merge, viewmodel$register, viewmodel$release, viewmodel$set, viewmodel$splice, viewmodel$teardown, viewmodel$unregister, createComputations, adaptConfig );
+	}( create, viewmodel$adapt, viewmodel$applyChanges, viewmodel$capture, viewmodel$clearCache, viewmodel$compute, viewmodel$get, viewmodel$init, viewmodel$mark, viewmodel$merge, viewmodel$register, viewmodel$release, viewmodel$set, viewmodel$smartUpdate, viewmodel$teardown, viewmodel$unregister, adaptConfig );
 
 	/* Ractive/initialise.js */
-	var Ractive_initialise = function( config, create, getElement, getNextNumber, Viewmodel, Fragment ) {
+	var Ractive_initialise = function( config, create, Fragment, getElement, getNextNumber, Hook, HookQueue, Viewmodel ) {
 
-		return function initialiseRactiveInstance( ractive ) {
+		var __export;
+		var constructHook = new Hook( 'construct' ),
+			configHook = new Hook( 'config' ),
+			initHook = new HookQueue( 'init' );
+		__export = function initialiseRactiveInstance( ractive ) {
 			var options = arguments[ 1 ];
 			if ( options === void 0 )
 				options = {};
+			var el;
 			initialiseProperties( ractive, options );
+			// make this option do what would be expected if someone
+			// did include it on a new Ractive() or new Component() call.
+			// Silly to do so (put a hook on the very options being used),
+			// but handle it correctly, consistent with the intent.
+			constructHook.fire( config.getConstructTarget( ractive, options ), options );
 			// init config from Parent and options
 			config.init( ractive.constructor, ractive, options );
-			// TEMPORARY. This is so we can implement Viewmodel gradually
-			ractive.viewmodel = new Viewmodel( ractive );
-			// hacky circular problem until we get this sorted out
-			// if viewmodel immediately processes computed properties,
-			// they may call ractive.get, which calls ractive.viewmodel,
-			// which hasn't been set till line above finishes.
-			ractive.viewmodel.compute();
-			// Render our *root fragment*
-			if ( ractive.template ) {
-				ractive.fragment = new Fragment( {
-					template: ractive.template,
-					root: ractive,
-					owner: ractive
-				} );
-			}
-			ractive.viewmodel.applyChanges();
-			// render automatically ( if `el` is specified )
-			tryRender( ractive );
-		};
-
-		function tryRender( ractive ) {
-			var el;
+			configHook.fire( ractive );
+			// Teardown any existing instances *before* trying to set up the new one -
+			// avoids certain weird bugs
 			if ( el = getElement( ractive.el ) ) {
-				var wasEnabled = ractive.transitionsEnabled;
-				// Temporarily disable transitions, if `noIntro` flag is set
-				if ( ractive.noIntro ) {
-					ractive.transitionsEnabled = false;
-				}
-				// If the target contains content, and `append` is falsy, clear it
-				if ( el && !ractive.append ) {
-					// Tear down any existing instances on this element
+				if ( !ractive.append ) {
 					if ( el.__ractive_instances__ ) {
 						try {
 							el.__ractive_instances__.splice( 0, el.__ractive_instances__.length ).forEach( function( r ) {
@@ -13134,11 +14112,29 @@ exports.unbind = function(el, type, fn, capture){
 					}
 					el.innerHTML = '';
 				}
-				ractive.render( el, ractive.append );
-				// reset transitionsEnabled
-				ractive.transitionsEnabled = wasEnabled;
 			}
-		}
+			initHook.begin( ractive );
+			// TEMPORARY. This is so we can implement Viewmodel gradually
+			ractive.viewmodel = new Viewmodel( ractive );
+			// hacky circular problem until we get this sorted out
+			// if viewmodel immediately processes computed properties,
+			// they may call ractive.get, which calls ractive.viewmodel,
+			// which hasn't been set till line above finishes.
+			ractive.viewmodel.init();
+			// Render our *root fragment*
+			if ( ractive.template ) {
+				ractive.fragment = new Fragment( {
+					template: ractive.template,
+					root: ractive,
+					owner: ractive
+				} );
+			}
+			initHook.end( ractive );
+			// render automatically ( if `el` is specified )
+			if ( el ) {
+				ractive.render( el, ractive.append );
+			}
+		};
 
 		function initialiseProperties( ractive, options ) {
 			// Generate a unique identifier, for places where you'd use a weak map if it
@@ -13166,66 +14162,24 @@ exports.unbind = function(el, type, fn, capture){
 				options._component.instance = ractive;
 			}
 		}
-	}( config, create, getElement, getNextNumber, Viewmodel, Fragment );
+		return __export;
+	}( config, create, Fragment, getElement, getNextNumber, Ractive$shared_hooks_Hook, Ractive$shared_hooks_HookQueue, Viewmodel );
 
-	/* extend/initChildInstance.js */
-	var initChildInstance = function( initialise ) {
+	/* extend/unwrapExtended.js */
+	var unwrapExtended = function( wrap, config, circular ) {
 
-		// The Child constructor contains the default init options for this class
-		return function initChildInstance( child, Child, options ) {
-			if ( child.beforeInit ) {
-				child.beforeInit( options );
-			}
-			initialise( child, options );
-		};
-	}( Ractive_initialise );
-
-	/* extend/childOptions.js */
-	var childOptions = function( wrapPrototype, wrap, config, circular ) {
-
-		var Ractive,
-			// would be nice to not have these here,
-			// they get added during initialise, so for now we have
-			// to make sure not to try and extend them.
-			// Possibly, we could re-order and not add till later
-			// in process.
-			blacklisted = {
-				'_parent': true,
-				'_component': true
-			},
-			childOptions = {
-				toPrototype: toPrototype,
-				toOptions: toOptions
-			},
-			registries = config.registries;
-		config.keys.forEach( function( key ) {
-			return blacklisted[ key ] = true;
-		} );
+		var __export;
+		var Ractive;
 		circular.push( function() {
 			Ractive = circular.Ractive;
 		} );
-		return childOptions;
-
-		function toPrototype( parent, proto, options ) {
-			for ( var key in options ) {
-				if ( !( key in blacklisted ) && options.hasOwnProperty( key ) ) {
-					var member = options[ key ];
-					// if this is a method that overwrites a method, wrap it:
-					if ( typeof member === 'function' ) {
-						member = wrapPrototype( parent, key, member );
-					}
-					proto[ key ] = member;
-				}
-			}
-		}
-
-		function toOptions( Child ) {
+		__export = function unwrapExtended( Child ) {
 			if ( !( Child.prototype instanceof Ractive ) ) {
 				return Child;
 			}
 			var options = {};
 			while ( Child ) {
-				registries.forEach( function( r ) {
+				config.registries.forEach( function( r ) {
 					addRegistry( r.useDefaults ? Child.prototype : Child, options, r.name );
 				} );
 				Object.keys( Child.prototype ).forEach( function( key ) {
@@ -13255,7 +14209,7 @@ exports.unbind = function(el, type, fn, capture){
 				}
 			}
 			return options;
-		}
+		};
 
 		function addRegistry( target, options, name ) {
 			var registry, keys = Object.keys( target[ name ] );
@@ -13271,10 +14225,11 @@ exports.unbind = function(el, type, fn, capture){
 				return registry[ key ] = target[ name ][ key ];
 			} );
 		}
-	}( wrapPrototypeMethod, wrapMethod, config, circular );
+		return __export;
+	}( wrapMethod, config, circular );
 
 	/* extend/_extend.js */
-	var Ractive_extend = function( create, defineProperties, getGuid, config, initChildInstance, Viewmodel, childOptions ) {
+	var Ractive_extend = function( create, defineProperties, getGuid, config, initialise, Viewmodel, unwrap ) {
 
 		return function extend() {
 			var options = arguments[ 0 ];
@@ -13284,10 +14239,10 @@ exports.unbind = function(el, type, fn, capture){
 				Child, proto, staticProperties;
 			// if we're extending with another Ractive instance, inherit its
 			// prototype methods and default options as well
-			options = childOptions.toOptions( options );
+			options = unwrap( options );
 			// create Child constructor
 			Child = function( options ) {
-				initChildInstance( this, Child, options );
+				initialise( this, options );
 			};
 			proto = create( Parent.prototype );
 			proto.constructor = Child;
@@ -13315,12 +14270,10 @@ exports.unbind = function(el, type, fn, capture){
 			// extend configuration
 			config.extend( Parent, proto, options );
 			Viewmodel.extend( Parent, proto );
-			// and any other properties or methods on options...
-			childOptions.toPrototype( Parent.prototype, proto, options );
 			Child.prototype = proto;
 			return Child;
 		};
-	}( create, defineProperties, getGuid, config, initChildInstance, Viewmodel, childOptions );
+	}( create, defineProperties, getGuid, config, Ractive_initialise, Viewmodel, unwrapExtended );
 
 	/* Ractive.js */
 	var Ractive = function( defaults, easing, interpolators, svg, magic, defineProperties, proto, Promise, extendObj, extend, parse, initialise, circular ) {
@@ -13352,7 +14305,7 @@ exports.unbind = function(el, type, fn, capture){
 			},
 			// version
 			VERSION: {
-				value: '0.5.5'
+				value: '0.6.1'
 			},
 			// Plugins
 			adaptors: {
@@ -13437,7 +14390,246 @@ exports.unbind = function(el, type, fn, capture){
 
 }( typeof window !== 'undefined' ? window : this ) );
 
+},{}],3:[function(require,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+
+process.nextTick = (function () {
+    var canSetImmediate = typeof window !== 'undefined'
+    && window.setImmediate;
+    var canPost = typeof window !== 'undefined'
+    && window.postMessage && window.addEventListener
+    ;
+
+    if (canSetImmediate) {
+        return function (f) { return window.setImmediate(f) };
+    }
+
+    if (canPost) {
+        var queue = [];
+        window.addEventListener('message', function (ev) {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+
+        return function nextTick(fn) {
+            queue.push(fn);
+            window.postMessage('process-tick', '*');
+        };
+    }
+
+    return function nextTick(fn) {
+        setTimeout(fn, 0);
+    };
+})();
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+}
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+
+},{}],4:[function(require,module,exports){
+/**
+ * Module dependencies.
+ */
+
+var closest = require('closest')
+  , event = require('event');
+
+/**
+ * Delegate event `type` to `selector`
+ * and invoke `fn(e)`. A callback function
+ * is returned which may be passed to `.unbind()`.
+ *
+ * @param {Element} el
+ * @param {String} selector
+ * @param {String} type
+ * @param {Function} fn
+ * @param {Boolean} capture
+ * @return {Function}
+ * @api public
+ */
+
+exports.bind = function(el, selector, type, fn, capture){
+  return event.bind(el, type, function(e){
+    var target = e.target || e.srcElement;
+    e.delegateTarget = closest(target, selector, true, el);
+    if (e.delegateTarget) fn.call(el, e);
+  }, capture);
+};
+
+/**
+ * Unbind event `type`'s callback `fn`.
+ *
+ * @param {Element} el
+ * @param {String} type
+ * @param {Function} fn
+ * @param {Boolean} capture
+ * @api public
+ */
+
+exports.unbind = function(el, type, fn, capture){
+  event.unbind(el, type, fn, capture);
+};
+
+},{"closest":5,"event":8}],5:[function(require,module,exports){
+var matches = require('matches-selector')
+
+module.exports = function (element, selector, checkYoSelf, root) {
+  element = checkYoSelf ? {parentNode: element} : element
+
+  root = root || document
+
+  // Make sure `element !== document` and `element != null`
+  // otherwise we get an illegal invocation
+  while ((element = element.parentNode) && element !== document) {
+    if (matches(element, selector))
+      return element
+    // After `matches` on the edge case that
+    // the selector matches the root
+    // (when the root is not the document)
+    if (element === root)
+      return
+  }
+}
+
+},{"matches-selector":6}],6:[function(require,module,exports){
+/**
+ * Module dependencies.
+ */
+
+var query = require('query');
+
+/**
+ * Element prototype.
+ */
+
+var proto = Element.prototype;
+
+/**
+ * Vendor function.
+ */
+
+var vendor = proto.matches
+  || proto.webkitMatchesSelector
+  || proto.mozMatchesSelector
+  || proto.msMatchesSelector
+  || proto.oMatchesSelector;
+
+/**
+ * Expose `match()`.
+ */
+
+module.exports = match;
+
+/**
+ * Match `el` to `selector`.
+ *
+ * @param {Element} el
+ * @param {String} selector
+ * @return {Boolean}
+ * @api public
+ */
+
+function match(el, selector) {
+  if (!el || el.nodeType !== 1) return false;
+  if (vendor) return vendor.call(el, selector);
+  var nodes = query.all(selector, el.parentNode);
+  for (var i = 0; i < nodes.length; ++i) {
+    if (nodes[i] == el) return true;
+  }
+  return false;
+}
+
+},{"query":7}],7:[function(require,module,exports){
+function one(selector, el) {
+  return el.querySelector(selector);
+}
+
+exports = module.exports = function(selector, el){
+  el = el || document;
+  return one(selector, el);
+};
+
+exports.all = function(selector, el){
+  el = el || document;
+  return el.querySelectorAll(selector);
+};
+
+exports.engine = function(obj){
+  if (!obj.one) throw new Error('.one callback required');
+  if (!obj.all) throw new Error('.all callback required');
+  one = obj.one;
+  exports.all = obj.all;
+  return exports;
+};
+
+},{}],8:[function(require,module,exports){
+var bind = window.addEventListener ? 'addEventListener' : 'attachEvent',
+    unbind = window.removeEventListener ? 'removeEventListener' : 'detachEvent',
+    prefix = bind !== 'addEventListener' ? 'on' : '';
+
+/**
+ * Bind `el` event `type` to `fn`.
+ *
+ * @param {Element} el
+ * @param {String} type
+ * @param {Function} fn
+ * @param {Boolean} capture
+ * @return {Function}
+ * @api public
+ */
+
+exports.bind = function(el, type, fn, capture){
+  el[bind](prefix + type, fn, capture || false);
+  return fn;
+};
+
+/**
+ * Unbind `el` event `type`'s callback `fn`.
+ *
+ * @param {Element} el
+ * @param {String} type
+ * @param {Function} fn
+ * @param {Boolean} capture
+ * @return {Function}
+ * @api public
+ */
+
+exports.unbind = function(el, type, fn, capture){
+  el[unbind](prefix + type, fn, capture || false);
+  return fn;
+};
 },{}],9:[function(require,module,exports){
+module.exports=require(2)
+},{}],10:[function(require,module,exports){
 module.exports = remove
 
 function remove(element) {
@@ -13449,19 +14641,30 @@ function remove(element) {
   return element
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function (process){
 var removeElement = require('remove-element');
-var View = require('ractive');
-var uid = 0;
+var Ractive = require('ractive');
+require('Ractive-decorators-sortable');
 
-module.exports = View.extend({
+module.exports = Ractive.extend({
 
-  init: function (opts) {
-    this.template = View.parse(opts.template);
+  onrender: function () {
+    var self = this;
+    this.set('uid', 0);
+
+    this.on('dragenter', function () {
+      /* 
+      * Wow this is a nasty hack that probably won't scale.
+      * But for some reason <td> elements of the row being indirectly 
+      * moved disappear on dragenter.
+      */
+      self.forceUpdate();
+    });
   },
 
   import: function (items) {
+    var self = this;
     var columns = [];
     var columnIdByName = {};
 
@@ -13470,14 +14673,16 @@ module.exports = View.extend({
         var columnId;
 
         if (!columnIdByName[name]) {
-          columnId = '_' + uid++;
+          columnId = '_' + self.get('uid');
+          self.add('uid');
+
           columnIdByName[name] = columnId;
 
           columns.push({
             id: columnId,
             name: name,
             type: 'string',
-            defaultValue: function () { return ''; }
+            defaultValue: function () { return ' '; }
           });
         }
       });
@@ -13486,7 +14691,8 @@ module.exports = View.extend({
     rows = items.map(function (item) {
       var row = {};
 
-      Object.keys(item).forEach(function (name) {
+      Object.keys(columnIdByName).forEach(function (name) {
+        if (!item[name]) item[name] = ' ';
         row[columnIdByName[name]] = item[name];
       });
 
@@ -13502,13 +14708,17 @@ module.exports = View.extend({
 
   addColumn: function (column) {
     var changes = {};
-    var id = '_' + uid++;
+
+    var id = '_' + this.get('uid');
+    this.add('uid');
 
     this.push('columns', {
       id: id,
       name: column.name,
       type: column.type || 'string'
     });
+
+    this.set('columnIdByName.' + column.name, id);
 
     var rows = this.get('rows');
 
@@ -13533,12 +14743,18 @@ module.exports = View.extend({
 
   destroyColumn: function (id) {
     if (process.browser) removeElement(document.getElementById(id));
+
+    var columnIdByName = this.get('columnIdByName');
     var columns = this.get('columns');
+    var rows = this.get('rows');
+
     columns.forEach(function (column, i) {
-      if (id === column.id) delete columns[i];
+      if (id === column.id) {
+        columns.splice(i, 1);
+        delete columnIdByName[column.name];
+      }
     });
 
-    var rows = this.get('rows');
     rows.forEach(function (row, i) {
       delete rows[i][id];
     });
@@ -13567,18 +14783,22 @@ module.exports = View.extend({
       if (parseInt(index) === i) rows.splice(index, 1);
     });
   },
+  
+  destroyRows: function () {
+    this.set('rows', []);
+  },
 
   clear: function () {
+    this.set('uid', 0);
     this.set('columns', []);
     this.set('rows', []);
     this.set('columnIdByName', {});
   },
 
-  toJSON: function (cb) {
+  getRows: function () {
     var ret = [];
     var rows = this.get('rows');
     var columns = this.get('columns');
-    var columnIdByName = this.get('columnIdByName');
 
     rows.forEach(function (row, i) {
       var newRow = {};
@@ -13590,10 +14810,238 @@ module.exports = View.extend({
       ret.push(newRow);
     });
 
-    return JSON.stringify(ret);
+    return ret;
+  },
+
+  toJSON: function () {
+    return JSON.stringify(this.getRows());
+  },
+
+  /* 
+  * Wow this is a nasty hack that probably won't scale.
+  * But for some reason <td> elements of the row being indirectly 
+  * moved disappear on dragenter.
+  */
+  forceUpdate: function (rows) {
+    if (!rows) var rows = this.getRows();
+    this.clear();
+    this.import(rows);
   }
 
 });
 
 }).call(this,require("FWaASH"))
-},{"FWaASH":2,"ractive":8,"remove-element":9}]},{},[1])
+},{"FWaASH":3,"Ractive-decorators-sortable":12,"ractive":9,"remove-element":10}],12:[function(require,module,exports){
+/*
+
+	Ractive-decorators-sortable
+	===========================
+
+	Version 0.1.0.
+
+	This plugin adds a 'sortable' decorator to Ractive, which enables
+	elements that correspond to array members to be re-ordered using
+	the HTML5 drag and drop API. Doing so will update the order
+	of the array.
+
+	==========================
+
+	Troubleshooting: If you're using a module system in your app (AMD or
+	something more nodey) then you may need to change the paths below,
+	where it says `require( 'Ractive' )` or `define([ 'Ractive' ]...)`.
+
+	==========================
+
+	Usage: Include this file on your page below Ractive, e.g:
+
+	    <script src='lib/Ractive.js'></script>
+	    <script src='lib/Ractive-decorators-sortable.js'></script>
+
+	Or, if you're using a module loader, require this module:
+
+	    // requiring the plugin will 'activate' it - no need to use
+	    // the return value
+	    require( 'Ractive-decorators-sortable' );
+
+	Then use the decorator like so:
+
+	    <!-- template -->
+	    <ul>
+	      {{#list}}
+	        <li decorator='sortable'>{{.}}</li>
+	      {{/list}}
+	    </ul>
+
+	    var ractive = new Ractive({
+	      el: myContainer,
+	      template: myTemplate,
+	      data: { list: [ 'Firefox', 'Chrome', 'Internet Explorer', 'Opera', 'Safari', 'Maxthon' ] }
+	    });
+
+	When the user drags the source element over a target element, the
+	target element will have a class name added to it. This allows you
+	to render the target differently (e.g. hide the text, add a dashed
+	border, whatever). By default this class name is 'droptarget'.
+
+	You can configure the class name like so:
+
+	    Ractive.decorators.sortable.targetClass = 'aDifferentClassName';
+
+	PS for an entertaining rant about the drag and drop API, visit
+	http://www.quirksmode.org/blog/archives/2009/09/the_html5_drag.html
+
+*/
+
+(function ( global, factory ) {
+
+	'use strict';
+
+	// Common JS (i.e. browserify) environment
+	if ( typeof module !== 'undefined' && module.exports && typeof require === 'function' ) {
+		factory( require( 'Ractive' ) );
+	}
+
+	// AMD?
+	else if ( typeof define === 'function' && define.amd ) {
+		define([ 'Ractive' ], factory );
+	}
+
+	// browser global
+	else if ( global.Ractive ) {
+		factory( global.Ractive );
+	}
+
+	else {
+		throw new Error( 'Could not find Ractive! It must be loaded before the Ractive-decorators-sortable plugin' );
+	}
+
+}( typeof window !== 'undefined' ? window : this, function ( Ractive ) {
+
+	'use strict';
+
+	var sortable,
+		ractive,
+		sourceKeypath,
+		sourceArray,
+		sourceIndex,
+		dragstartHandler,
+		dragenterHandler,
+		dropHandler,
+		removeTargetClass,
+		preventDefault,
+		errorMessage;
+
+	sortable = function ( node ) {
+		node.draggable = true;
+
+		node.addEventListener( 'dragstart', dragstartHandler, false );
+		node.addEventListener( 'dragenter', dragenterHandler, false );
+		node.addEventListener( 'dragleave', removeTargetClass, false );
+		node.addEventListener( 'drop', dropHandler, false );
+
+		// necessary to prevent animation where ghost element returns
+		// to its (old) home
+		node.addEventListener( 'dragover', preventDefault, false );
+
+		return {
+			teardown: function () {
+				node.removeEventListener( 'dragstart', dragstartHandler, false );
+				node.removeEventListener( 'dragenter', dragenterHandler, false );
+				node.removeEventListener( 'dragleave', removeTargetClass, false );
+				node.removeEventListener( 'drop', dropHandler, false );
+				node.removeEventListener( 'dragover', preventDefault, false );
+			}
+		};
+	};
+
+	sortable.targetClass = 'droptarget';
+
+	errorMessage = 'The sortable decorator only works with elements that correspond to array members';
+
+	dragstartHandler = function ( event ) {
+		var storage = this._ractive, lastDotIndex;
+		
+		sourceKeypath = storage.keypath;
+
+		// this decorator only works with array members!
+		lastDotIndex = sourceKeypath.lastIndexOf( '.' );
+
+		if ( lastDotIndex === -1 ) {
+			throw new Error( errorMessage );
+		}
+
+		sourceArray = sourceKeypath.substr( 0, lastDotIndex );
+		sourceIndex = +( sourceKeypath.substring( lastDotIndex + 1 ) );
+
+		if ( isNaN( sourceIndex ) ) {
+			throw new Error( errorMessage );
+		}
+
+		event.dataTransfer.setData( 'foo', true ); // enables dragging in FF. go figure
+		
+		this._ractive.root.fire('dragstart');
+				
+		// keep a reference to the Ractive instance that 'owns' this data and this element
+		ractive = storage.root;
+	};
+
+	dragenterHandler = function () {
+		var targetKeypath, lastDotIndex, targetArray, targetIndex, array, source;
+
+		// If we strayed into someone else's territory, abort
+		if ( this._ractive.root !== ractive ) {
+			return;
+		}
+
+		targetKeypath = this._ractive.keypath;
+
+		// this decorator only works with array members!
+		lastDotIndex = targetKeypath.lastIndexOf( '.' );
+
+		if ( lastDotIndex === -1 ) {
+			throw new Error( errorMessage );
+		}
+
+		targetArray = targetKeypath.substr( 0, lastDotIndex );
+		targetIndex = +( targetKeypath.substring( lastDotIndex + 1 ) );
+
+		// if we're dealing with a different array, abort
+		if ( targetArray !== sourceArray ) {
+			return;
+		}
+
+		// if it's the same index, add droptarget class then abort
+		if ( targetIndex === sourceIndex ) {
+			this.classList.add( sortable.targetClass );
+			return;
+		}
+
+		array = ractive.get( sourceArray );
+
+		// remove source from array
+		source = array.splice( sourceIndex, 1 )[0];
+
+		// the target index is now the source index...
+		sourceIndex = targetIndex;
+
+		// add source back to array in new location
+		array.splice( sourceIndex, 0, source );
+		
+		this._ractive.root.fire('dragenter');
+	};
+	
+	dropHandler = function () {
+		this.classList.remove( sortable.targetClass );
+		this._ractive.root.fire('drop');
+	};
+
+	removeTargetClass = function () {
+		this.classList.remove( sortable.targetClass );
+	};
+
+	preventDefault = function ( event ) { event.preventDefault(); };
+
+	Ractive.decorators.sortable = sortable;
+
+}));
+},{"Ractive":2}]},{},[1])

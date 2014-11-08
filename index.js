@@ -9,9 +9,11 @@ var editor = new TableEditor({
 });
 
 editor.import([
-  { example: 'weeeee', wat: 'wooooo' },
-  { example: 'weeeee', wat: 'wooooo' },
-  { example: 'weeeee', wat: 'wooooo' }
+  { example: '1', wat: 'a' },
+  { example: '2', wat: 'b' },
+  { example: '3', wat: 'c' },
+  { example: '4', wat: 'd' },
+  { example: '5', wat: 'e' }
 ]);
 
 var dump = document.getElementById('json-dump');
