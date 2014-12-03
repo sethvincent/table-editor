@@ -1,0 +1,57 @@
+#table-editor {
+  margin-top: 30px;
+}
+
+#table-editor thead th {
+  text-align: left;
+  padding-top: 10px;
+}
+
+#table-editor thead th span.column-name {
+  display: inline-block;
+}
+
+#table-editor thead th span.column-name input {
+  border: 0px;
+  width: 114px;
+  height: 30px;
+  padding-left: 5px;
+}
+
+#table-editor tbody td {
+  width: 150px;
+}
+
+#table-editor tbody .row-index {
+  width: 25px;
+}
+
+#table-editor textarea {
+  resize: none;
+  height: 28px;
+  line-height: 26px;
+  padding: 0px 0px 0px 5px;
+  border: 1px solid #ccc;
+  width: 150px;
+  outline: 0;
+}
+
+#table-editor .expand-editor {
+  position: relative;
+  float: right;
+  margin-top: -22px;
+  margin-right: 5px;
+  display: none;
+}
+
+#table-editor td:hover > .expand-editor {
+  display: inline;
+}
+
+#table-editor tbody td.row-label,
+#table-editor tbody td.row-index {
+  width: 20px;
+  cursor: all-scroll;
+  cursor: --webkit-grab;
+  cursor: grab;
+}

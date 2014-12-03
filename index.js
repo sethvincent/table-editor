@@ -4,7 +4,7 @@ require('Ractive-decorators-sortable');
 
 module.exports = Ractive.extend({
 
-  onrender: function () {
+  onrender: function (asd) {
     var self = this;
     this.set('uid', 0);
 
@@ -37,7 +37,7 @@ module.exports = Ractive.extend({
             id: columnId,
             name: name,
             type: 'string',
-            defaultValue: function () { return ' '; }
+            defaultValue: function () { return null; }
           });
         }
       });
@@ -138,7 +138,7 @@ module.exports = Ractive.extend({
       if (parseInt(index) === i) rows.splice(index, 1);
     });
   },
-  
+
   destroyRows: function () {
     this.set('rows', []);
   },
@@ -168,8 +168,14 @@ module.exports = Ractive.extend({
     return ret;
   },
 
-  toJSON: function () {
-    return JSON.stringify(this.getRows());
+  toJSON: function (indent) {
+    var data = {
+      name: this.get('name'),
+      description: this.get('description'),
+      publisher: this.get('publisher'),
+      rows: this.getRows()
+    }
+    return JSON.stringify(data, null, indent);
   },
 
   /* 
@@ -177,6 +183,7 @@ module.exports = Ractive.extend({
   * But for some reason <td> elements of the row being indirectly 
   * moved disappear on dragenter.
   */
+
   forceUpdate: function (rows) {
     if (!rows) var rows = this.getRows();
     this.clear();

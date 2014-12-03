@@ -7,11 +7,10 @@
   },
   "main": "index.js",
   "browser": "index.js",
+  "style": "style.css",
   "scripts": {
     "test": "tape test.js",
-    "example": "beefy example/index.js --live --index example/index.html -- -t brfs",
-    "bundle": "browserify index.js -s TableEditor -o table-editor.js",
-    "start": "npm run watch"
+    "bundle": "browserify index.js -s TableEditor -o table-editor.js"
   },
   "dependencies": {
     "ractive": "0.6.1",
