@@ -46,7 +46,7 @@ on(document.body, '#add-column', 'click', function(e) {
 
 ```
 
-Check out the rest of the above example, including an index.html file and the table.html template in the `gh-pages` branch of this repo.
+Check out the rest of the above example, including an index.html file and the table.html template in the [`gh-pages` branch of this repo](https://github.com/sethvincent/table-editor/tree/gh-pages).
 
 ## Extended example
 
