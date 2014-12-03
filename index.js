@@ -120,7 +120,7 @@ module.exports = Ractive.extend({
   addRow: function () {
     var row = {};
     this.get('columns').forEach(function (column) {
-      row[column.id] = '';
+      row[column.id] = null;
     });
     this.push('rows', row);
   },
