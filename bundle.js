@@ -2,26 +2,29 @@
 
 var on = require('component-delegate').bind;
 var TableEditor = require('table-editor');
-var template = "<table id=\"table-editor\">\n  <thead id=\"table-header\">\n    <tr>\n      <span class=\"spacer\"></span>\n      {{#columns:key}}\n        <th id={{id}}>\n          <span class=\"column-name\"><input value=\"{{name}}\"></span>\n          <button id=\"{{id}}\" class=\"destroy-column\">x</button>\n        </th>\n      {{/columns}}\n    </tr>\n  </thead>\n  <tbody id=\"table-body\">\n    {{#rows:i}}\n    <tr decorator=\"sortable\" class=\"row-{{ i }}\">\n      <button class=\"destroy-row\" id={{i}}>x</button>\n      {{#this:value}}\n      <td class=\"column-{{value}}\" id=\"row-{{ i }}-column-{{value}}\">\n        <textarea value=\"{{this}}\"></textarea>\n      </td>\n      {{/.}}\n    </tr>\n    {{/rows}}\n  </tbody>\n</table>\n";
+var template = "<h2>{{name}}</h2>\n<p>{{description}}<br>\n<i>published by {{publisher}}<i></p>\n\n<br>\n\n<div class=\"buttons\">\n  <button id=\"add-row\">add row</button>\n  <button id=\"add-column\">add column</button>\n</div>\n\n<div id=\"editor\">\n  <table id=\"table-editor\">\n    <thead id=\"table-header\">\n      <tr>\n        <span class=\"spacer\"></span>\n        {{#columns:key}}\n          <th id={{id}}>\n            <span class=\"column-name\"><input value=\"{{name}}\"></span>\n            <button id=\"{{id}}\" class=\"destroy-column\">x</button>\n          </th>\n        {{/columns}}\n      </tr>\n    </thead>\n    <tbody id=\"table-body\">\n      {{#rows:i}}\n      <tr class=\"row_{{ i }}\">\n        <button class=\"destroy-row\" id={{i}}>x</button>\n        {{#this:value}}\n        <td class=\"column{{value}}\" id=\"row_{{ i }}-column{{value}}\">\n          <textarea value=\"{{this}}\"></textarea>\n        </td>\n        {{/.}}\n      </tr>\n      {{/rows}}\n    </tbody>\n  </table>\n</div>";
 
 var editor = new TableEditor({
-  el: 'editor',
+  el: 'table-editor',
   template: template,
+  data: {
+    name: 'example',
+    description: 'this is an example dataset',
+    publisher: 'seth vincent'
+  }
 });
 
 editor.import([
   { example: '1', wat: 'a' },
   { example: '2', wat: 'b' },
-  { example: '3', wat: 'c' },
-  { example: '4', wat: 'd' },
-  { example: '5', wat: 'e' }
+  { example: '3', wat: 'c' }
 ]);
 
 var dump = document.getElementById('json-dump');
-dump.value = editor.toJSON();
+dump.value = editor.toJSON(2);
 
 editor.on('change', function (change) {
-  dump.value = editor.toJSON();
+  dump.value = editor.toJSON(2);
 });
 
 on(document.body, '#add-row', 'click', function(e) {
@@ -33,8 +36,8 @@ on(document.body, '.destroy-row', 'click', function(e) {
 });
 
 on(document.body, '#add-column', 'click', function(e) {
-  var name = window.prompt('New column name');
-  editor.addColumn({ name: name, type: 'string' });
+  var columns = editor.get('columns');
+  editor.addColumn({ name: 'column ' + (columns.length+1), type: 'string' });
 });
 
 on(document.body, '.destroy-column', 'click', function(e) {
@@ -14649,7 +14652,7 @@ require('Ractive-decorators-sortable');
 
 module.exports = Ractive.extend({
 
-  onrender: function () {
+  onrender: function (asd) {
     var self = this;
     this.set('uid', 0);
 
@@ -14682,7 +14685,7 @@ module.exports = Ractive.extend({
             id: columnId,
             name: name,
             type: 'string',
-            defaultValue: function () { return ' '; }
+            defaultValue: function () { return null; }
           });
         }
       });
@@ -14783,7 +14786,7 @@ module.exports = Ractive.extend({
       if (parseInt(index) === i) rows.splice(index, 1);
     });
   },
-  
+
   destroyRows: function () {
     this.set('rows', []);
   },
@@ -14813,8 +14816,14 @@ module.exports = Ractive.extend({
     return ret;
   },
 
-  toJSON: function () {
-    return JSON.stringify(this.getRows());
+  toJSON: function (indent) {
+    var data = {
+      name: this.get('name'),
+      description: this.get('description'),
+      publisher: this.get('publisher'),
+      rows: this.getRows()
+    }
+    return JSON.stringify(data, null, indent);
   },
 
   /* 
@@ -14822,6 +14831,7 @@ module.exports = Ractive.extend({
   * But for some reason <td> elements of the row being indirectly 
   * moved disappear on dragenter.
   */
+
   forceUpdate: function (rows) {
     if (!rows) var rows = this.getRows();
     this.clear();
