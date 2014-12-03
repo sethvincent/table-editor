@@ -1,7 +1,7 @@
 {
   "name": "table-editor",
   "description": "edit tabular data.",
-  "version": "0.7.5",
+  "version": "1.0.0",
   "repository": {
     "url": "git://github.com/sethvincent/table-editor.git"
   },

@@ -55,7 +55,7 @@ test('delete a row', function (t) {
 
   ed.destroyRow(1);
 
-  t.deepEqual(ed.toJSON(), JSON.stringify([
+  t.deepEqual(JSON.stringify(ed.getRows()), JSON.stringify([
     { example: 'weeeee', wat: 'wooooo' },
     { example: 'weeeee', wat: 'wooooo' }
   ]));
@@ -74,14 +74,14 @@ test('delete a column', function (t) {
   var id = ed.get('columns.0.id');
   ed.destroyColumn(id);
 
-  t.deepEqual(ed.toJSON(), JSON.stringify([
+  t.deepEqual(JSON.stringify(ed.getRows()), JSON.stringify([
     { wat: 'wooooo' },
     { wat: 'wooooo' },
     { wat: 'wooooo' }
   ]));
 });
 
-test('toJSON should export stringified JSON in format it was imported', function (t) {
+test('toJSON should export stringified JSON', function (t) {
   t.plan(1);
   var ed = new TableEditor();
 
@@ -92,5 +92,5 @@ test('toJSON should export stringified JSON in format it was imported', function
   ];
 
   ed.import(data);
-  t.deepEqual(ed.toJSON(), JSON.stringify(data));
+  t.deepEqual(JSON.stringify(ed.getRows()), JSON.stringify(data));
 });
