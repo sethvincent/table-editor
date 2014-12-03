@@ -94,3 +94,29 @@ test('toJSON should export stringified JSON', function (t) {
   ed.import(data);
   t.deepEqual(JSON.stringify(ed.getRows()), JSON.stringify(data));
 });
+
+test('should support name, description, publisher', function (t) {
+  t.plan(1);
+    
+  var ed = new TableEditor({
+    data: {
+      name: 'example',
+      description: 'example text',
+      publisher: 'somebody'
+    }
+  });
+
+  var data = {
+    name: 'example',
+    description: 'example text',
+    publisher: 'somebody',
+    rows: [
+      { example: 'weeeee', wat: 'wooooo' },
+      { example: 'weeeee', wat: 'wooooo' },
+      { example: 'weeeee', wat: 'wooooo' }
+    ]
+  };
+  
+  ed.import(data.rows);
+  t.deepEqual(ed.toJSON(), JSON.stringify(data));
+});
