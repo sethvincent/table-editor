@@ -4,23 +4,26 @@ var TableEditor = require('table-editor');
 var template = fs.readFileSync(__dirname + '/table.html', 'utf8');
 
 var editor = new TableEditor({
-  el: 'editor',
+  el: 'table-editor',
   template: template,
+  data: {
+    name: 'example',
+    description: 'this is an example dataset',
+    publisher: 'seth vincent'
+  }
 });
 
 editor.import([
   { example: '1', wat: 'a' },
   { example: '2', wat: 'b' },
-  { example: '3', wat: 'c' },
-  { example: '4', wat: 'd' },
-  { example: '5', wat: 'e' }
+  { example: '3', wat: 'c' }
 ]);
 
 var dump = document.getElementById('json-dump');
-dump.value = editor.toJSON();
+dump.value = editor.toJSON(2);
 
 editor.on('change', function (change) {
-  dump.value = editor.toJSON();
+  dump.value = editor.toJSON(2);
 });
 
 on(document.body, '#add-row', 'click', function(e) {
@@ -32,8 +35,8 @@ on(document.body, '.destroy-row', 'click', function(e) {
 });
 
 on(document.body, '#add-column', 'click', function(e) {
-  var name = window.prompt('New column name');
-  editor.addColumn({ name: name, type: 'string' });
+  var columns = editor.get('columns');
+  editor.addColumn({ name: 'column ' + (columns.length+1), type: 'string' });
 });
 
 on(document.body, '.destroy-column', 'click', function(e) {
