@@ -135,25 +135,8 @@ test('should support name, description, publisher', function (t) {
   t.deepEqual(ed.toJSON(), JSON.stringify(data));
 });
 
-test('convert an id to property keys', function (t) {
-  var id = 'row_0-column_0';
-  var ed = new TableEditor();
-  
-  var data = [
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' }
-  ];
-  
-  ed.import(data);
-  var keys = ed.idToKeys(id);
-  t.equal(keys.row, '0');
-  t.equal(keys.column, '0');
-  t.end();
-});
-
 test('get a cell value', function (t) {
-  var id = 'row_1-column_0';
+  var id = 'rows.1._0';
   var ed = new TableEditor();
   
   var data = [
@@ -163,13 +146,14 @@ test('get a cell value', function (t) {
   ];
 
   ed.import(data);
-  var cell = ed.getCell(id);
+  var cell = ed.get(id);
+  console.log('wewefwef', cell)
   t.equal(cell, 'this', 'cell value');
   t.end();
 });
 
 test('get a cell value', function (t) {
-  var id = 'row_1-column_0';
+  var id = 'rows.1._0';
   var ed = new TableEditor();
   
   var data = [
@@ -179,8 +163,23 @@ test('get a cell value', function (t) {
   ];
 
   ed.import(data);
-  ed.setCell(id, 'that');
-  var cell = ed.getCell(id);
+  ed.set(id, 'that');
+  var cell = ed.get(id);
+  console.log(cell)
   t.equal(cell, 'that', 'cell value changed');
   t.end();
 });
+
+test('get column id from column name', function (t) {
+  var ed = new TableEditor();
+  
+  var data = [
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'this', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ];
+
+  ed.import(data);
+  t.equal(ed.getColumnID('example'), '_0', 'column id');
+  t.end();
+})

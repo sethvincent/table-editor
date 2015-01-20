@@ -25,10 +25,10 @@
     </thead>
     <tbody id="table-body">
       {{#rows:i}}
-      <tr decorator="sortable" class="row_{{ i }}">
+      <tr decorator="sortable" class="rows.{{ i }}">
         <button class="destroy-row" id={{i}}>x</button>
         {{#this:value}}
-        <td class="column{{value}}" id="row_{{ i }}-column{{value}}">
+        <td class="column{{value}}" id="rows.{{ i }}.{{value}}">
           <textarea value="{{this}}"></textarea>
         </td>
         {{/.}}

@@ -103,6 +103,10 @@ module.exports = Ractive.extend({
       self.addColumn(column);
     });
   },
+  
+  getColumnID: function (name) {
+    return this.get('columnIdByName')[name];
+  },
 
   destroyColumn: function (id) {
     if (process.browser) removeElement(document.getElementById(id));
@@ -190,26 +194,6 @@ module.exports = Ractive.extend({
     });
 
     return row;
-  },
-
-  idToKeys: function (id) {
-    var id = id.split('-');
-    var columnIdByName = this.get('columns');
-
-    return { 
-      row: id[0].split('_')[1], 
-      column: id[1].split('_')[1]
-    };
-  },
-
-  getCell: function (id) {
-    var keys = this.idToKeys(id);
-    return this.get('rows.' + keys.row + '._' + keys.column);
-  },
-
-  setCell: function (id, value) {
-    var keys = this.idToKeys(id);
-    return this.set('rows.' + keys.row + '._' + keys.column, value);
   },
 
   toJSON: function (indent) {
