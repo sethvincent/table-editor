@@ -134,3 +134,53 @@ test('should support name, description, publisher', function (t) {
   ed.import(data.rows);
   t.deepEqual(ed.toJSON(), JSON.stringify(data));
 });
+
+test('convert an id to property keys', function (t) {
+  var id = 'row_0-column_0';
+  var ed = new TableEditor();
+  
+  var data = [
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ];
+  
+  ed.import(data);
+  var keys = ed.idToKeys(id);
+  t.equal(keys.row, '0');
+  t.equal(keys.column, '0');
+  t.end();
+});
+
+test('get a cell value', function (t) {
+  var id = 'row_1-column_0';
+  var ed = new TableEditor();
+  
+  var data = [
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'this', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ];
+
+  ed.import(data);
+  var cell = ed.getCell(id);
+  t.equal(cell, 'this', 'cell value');
+  t.end();
+});
+
+test('get a cell value', function (t) {
+  var id = 'row_1-column_0';
+  var ed = new TableEditor();
+  
+  var data = [
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'this', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ];
+
+  ed.import(data);
+  ed.setCell(id, 'that');
+  var cell = ed.getCell(id);
+  t.equal(cell, 'that', 'cell value changed');
+  t.end();
+});
