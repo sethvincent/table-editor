@@ -152,7 +152,7 @@ test('get a cell value', function (t) {
   t.end();
 });
 
-test('get a cell value', function (t) {
+test('set a cell value', function (t) {
   var id = 'rows.1._0';
   var ed = new TableEditor();
   
@@ -165,7 +165,7 @@ test('get a cell value', function (t) {
   ed.import(data);
   ed.set(id, 'that');
   var cell = ed.get(id);
-  console.log(cell)
+
   t.equal(cell, 'that', 'cell value changed');
   t.end();
 });
