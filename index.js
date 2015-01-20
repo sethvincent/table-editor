@@ -130,11 +130,13 @@ module.exports = Ractive.extend({
     this.fire('column:destroy');
   },
 
-  addRow: function () {
-    var row = {};
+  addRow: function (doc) {
+    var row = doc ? doc : {};
+    
     this.get('columns').forEach(function (column) {
-      row[column.id] = null;
+      row[column.id] = row[column.name] || null;
     });
+    
     this.push('rows', row);
     this.fire('row:add', row);
   },
@@ -144,6 +146,16 @@ module.exports = Ractive.extend({
     rows.forEach(function (row) {
       self.addRow(row);
     });
+  },
+  
+  updateRow: function (id, doc) {
+    var row = {};
+    
+    this.get('columns').forEach(function (column) {
+      row[column.id] = doc[column.name] || null;
+    });
+    
+    this.set('rows.'+id, row);
   },
 
   destroyRow: function (index) {
@@ -194,6 +206,16 @@ module.exports = Ractive.extend({
     });
 
     return row;
+  },
+  
+  setCell: function (row, column, value) {
+    if (column.charAt(0) !== '_') column = this.getColumnID(column);
+    return this.set('rows.' + row + '.' + column, value);
+  },
+  
+  getCell: function (row, column) {
+    if (column.charAt(0) !== '_') column = this.getColumnID(column);
+    return this.get('rows.' + row + '.' + column);
   },
 
   toJSON: function (indent) {

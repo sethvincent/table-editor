@@ -147,8 +147,9 @@ test('get a cell value', function (t) {
 
   ed.import(data);
   var cell = ed.get(id);
-  console.log('wewefwef', cell)
   t.equal(cell, 'this', 'cell value');
+
+  t.equal(ed.getCell(2, 'example'), 'weeeee');
   t.end();
 });
 
@@ -165,10 +166,14 @@ test('set a cell value', function (t) {
   ed.import(data);
   ed.set(id, 'that');
   var cell = ed.get(id);
-
   t.equal(cell, 'that', 'cell value changed');
+  
+  ed.setCell(2, 'example', 'wat');
+  t.equal(ed.getCell(2, 'example'), 'wat');
   t.end();
 });
+
+
 
 test('get column id from column name', function (t) {
   var ed = new TableEditor();
