@@ -43,6 +43,20 @@ test('watch for changes', function (t) {
   ed.set('rows.0.wat', 'testing');
 });
 
+test('get a row', function (t) {
+  var ed = new TableEditor();
+  
+  ed.import([
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' },
+    { example: 'weeeee', wat: 'wooooo' }
+  ]);
+  
+  var row = ed.getRow(1);
+  t.ok(row);
+  t.end();
+});
+
 test('delete a row', function (t) {
   t.plan(1);
   var ed = new TableEditor();

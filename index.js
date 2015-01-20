@@ -167,6 +167,18 @@ module.exports = Ractive.extend({
 
     return ret;
   },
+  
+  getRow: function (i) {
+    var columns = this.get('columns');
+    var data = this.get('rows.' + i);
+    var row = {};
+
+    columns.forEach(function (column) {
+      row[column.name] = data[column.id];
+    });
+
+    return row;
+  },
 
   toJSON: function (indent) {
     var data = {
