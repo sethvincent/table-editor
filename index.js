@@ -59,6 +59,8 @@ module.exports = Ractive.extend({
       columnIdByName: columnIdByName,
       rows: rows
     });
+    
+    this.fire('import');
   },
 
   addColumn: function (column) {
@@ -87,6 +89,8 @@ module.exports = Ractive.extend({
     else {
       this.addRow();
     }
+    
+    this.fire('column:add');
   },
 
   addColumns: function (columns) {
@@ -115,6 +119,8 @@ module.exports = Ractive.extend({
     });
 
     this.update();
+    
+    this.fire('column:destroy');
   },
 
   addRow: function () {
@@ -123,6 +129,7 @@ module.exports = Ractive.extend({
       row[column.id] = null;
     });
     this.push('rows', row);
+    this.fire('row:add', row);
   },
 
   addRows: function (rows) {
@@ -137,6 +144,7 @@ module.exports = Ractive.extend({
     rows.forEach(function (row, i) {
       if (parseInt(index) === i) rows.splice(index, 1);
     });
+    this.fire('row:destroy');
   },
 
   destroyRows: function () {
@@ -148,6 +156,7 @@ module.exports = Ractive.extend({
     this.set('columns', []);
     this.set('rows', []);
     this.set('columnIdByName', {});
+    this.fire('clear');
   },
 
   getRows: function () {
@@ -167,7 +176,7 @@ module.exports = Ractive.extend({
 
     return ret;
   },
-  
+
   getRow: function (i) {
     var columns = this.get('columns');
     var data = this.get('rows.' + i);
