@@ -17,6 +17,23 @@ module.exports = Ractive.extend({
       */
       self.forceUpdate();
     });
+
+    this.on('change', function (change) {
+      var self = this;
+      
+      Object.keys(change).forEach(function (key) {
+        var key = key.split('.');
+        
+        if (key[0] === 'columns') {
+          if (key[2] === 'name') self.fire('change:column:name', { key: change[key] });
+          if (key[2] === 'type') self.fire('change:column:type', { key: change[key] });
+        }
+
+        else if (key[0] === 'rows') {
+          
+        }
+      });
+    });
   },
 
   import: function (items) {
@@ -163,6 +180,8 @@ module.exports = Ractive.extend({
     rows.forEach(function (row, i) {
       if (parseInt(index) === i) rows.splice(index, 1);
     });
+    console.log('wat is tis')
+    this.forceUpdate();
     this.fire('row:destroy');
   },
 
@@ -228,7 +247,7 @@ module.exports = Ractive.extend({
     return JSON.stringify(data, null, indent);
   },
 
-  /* 
+  /*
   * Wow this is a nasty hack that probably won't scale.
   * But for some reason <td> elements of the row being indirectly 
   * moved disappear on dragenter.
