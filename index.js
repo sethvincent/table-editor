@@ -40,6 +40,7 @@ module.exports = Ractive.extend({
     var self = this;
     var columns = [];
     var columnIdByName = {};
+    items = items || [];
     
     var uid = this.get('uid');
     if (!uid) this.set('uid', 0);
