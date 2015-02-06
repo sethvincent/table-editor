@@ -2,7 +2,7 @@
 
 var on = require('component-delegate').bind;
 var TableEditor = require('table-editor');
-var template = "<h2>{{name}}</h2>\n<p>{{description}}<br>\n<i>published by {{publisher}}<i></p>\n\n<br>\n\n<div class=\"buttons\">\n  <button id=\"add-row\">add row</button>\n  <button id=\"add-column\">add column</button>\n</div>\n\n<div id=\"editor\">\n  <table id=\"table-editor\">\n    <thead id=\"table-header\">\n      <tr>\n        <span class=\"spacer\"></span>\n        {{#columns:key}}\n          <th id={{id}}>\n            <span class=\"column-name\"><input value=\"{{name}}\"></span>\n            <button id=\"{{id}}\" class=\"destroy-column\">x</button>\n          </th>\n        {{/columns}}\n      </tr>\n    </thead>\n    <tbody id=\"table-body\">\n      {{#rows:i}}\n      <tr class=\"row_{{ i }}\">\n        <button class=\"destroy-row\" id={{i}}>x</button>\n        {{#this:value}}\n        <td class=\"column{{value}}\" id=\"row_{{ i }}-column{{value}}\">\n          <textarea value=\"{{this}}\"></textarea>\n        </td>\n        {{/.}}\n      </tr>\n      {{/rows}}\n    </tbody>\n  </table>\n</div>";
+var template = "<h2>{{name}}</h2>\n<p>{{description}}<br>\n<i>published by {{publisher}}<i></p>\n\n<br>\n\n<div class=\"buttons\">\n  <button id=\"add-row\">add row</button>\n  <button id=\"add-column\">add column</button>\n  <button id=\"update\">update</button>\n</div>\n\n<div id=\"editor\">\n  <table id=\"table-editor\">\n    <thead id=\"table-header\">\n      <tr>\n        <span class=\"spacer\"></span>\n        {{#columns:key}}\n          <th id={{id}}>\n            <span class=\"column-name\"><input value=\"{{name}}\"></span>\n            <button id=\"{{id}}\" class=\"destroy-column\">x</button>\n          </th>\n        {{/columns}}\n      </tr>\n    </thead>\n    <tbody id=\"table-body\">\n      {{#rows:i}}\n      <tr class=\"row_{{ i }}\">\n        <button class=\"destroy-row\" id={{i}}>x</button>\n        {{#this:value}}\n        <td class=\"column{{value}}\" id=\"row_{{ i }}-column{{value}}\">\n          <textarea value=\"{{this}}\"></textarea>\n        </td>\n        {{/.}}\n      </tr>\n      {{/rows}}\n    </tbody>\n  </table>\n</div>";
 
 var editor = new TableEditor({
   el: 'table-editor',
@@ -38,6 +38,11 @@ on(document.body, '.destroy-row', 'click', function(e) {
 on(document.body, '#add-column', 'click', function(e) {
   var columns = editor.get('columns');
   editor.addColumn({ name: 'column ' + (columns.length+1), type: 'string' });
+});
+
+on(document.body, '#update', 'click', function(e) {
+  console.log('wat')
+  editor.forceUpdate();
 });
 
 on(document.body, '.destroy-column', 'click', function(e) {
@@ -14654,7 +14659,8 @@ module.exports = Ractive.extend({
 
   onrender: function (asd) {
     var self = this;
-    this.set('uid', 0);
+    var uid = this.get('uid');
+    if (!uid) this.set('uid', 0);
 
     this.on('dragenter', function () {
       /* 
@@ -14664,12 +14670,32 @@ module.exports = Ractive.extend({
       */
       self.forceUpdate();
     });
+
+    this.on('change', function (change) {
+      var self = this;
+      
+      Object.keys(change).forEach(function (key) {
+        var key = key.split('.');
+        
+        if (key[0] === 'columns') {
+          if (key[2] === 'name') self.fire('change:column:name', { key: change[key] });
+          if (key[2] === 'type') self.fire('change:column:type', { key: change[key] });
+        }
+
+        else if (key[0] === 'rows') {
+          
+        }
+      });
+    });
   },
 
   import: function (items) {
     var self = this;
     var columns = [];
     var columnIdByName = {};
+    
+    var uid = this.get('uid');
+    if (!uid) this.set('uid', 0);
 
     items.forEach( function (item) {
       Object.keys(item).forEach( function ( name ) {
@@ -14707,6 +14733,8 @@ module.exports = Ractive.extend({
       columnIdByName: columnIdByName,
       rows: rows
     });
+    
+    this.fire('import');
   },
 
   addColumn: function (column) {
@@ -14735,6 +14763,8 @@ module.exports = Ractive.extend({
     else {
       this.addRow();
     }
+    
+    this.fire('column:add');
   },
 
   addColumns: function (columns) {
@@ -14742,6 +14772,10 @@ module.exports = Ractive.extend({
     columns.forEach(function (column) {
       self.addColumn(column);
     });
+  },
+  
+  getColumnID: function (name) {
+    return this.get('columnIdByName')[name];
   },
 
   destroyColumn: function (id) {
@@ -14763,14 +14797,18 @@ module.exports = Ractive.extend({
     });
 
     this.update();
+    this.fire('column:destroy');
   },
 
-  addRow: function () {
-    var row = {};
+  addRow: function (doc) {
+    var row = doc ? doc : {};
+    
     this.get('columns').forEach(function (column) {
-      row[column.id] = null;
+      row[column.id] = row[column.name] || null;
     });
+    
     this.push('rows', row);
+    this.fire('row:add', row);
   },
 
   addRows: function (rows) {
@@ -14779,12 +14817,25 @@ module.exports = Ractive.extend({
       self.addRow(row);
     });
   },
+  
+  updateRow: function (id, doc) {
+    var row = {};
+    
+    this.get('columns').forEach(function (column) {
+      row[column.id] = doc[column.name] || null;
+    });
+    
+    this.set('rows.'+id, row);
+  },
 
   destroyRow: function (index) {
     var rows = this.get('rows');
     rows.forEach(function (row, i) {
       if (parseInt(index) === i) rows.splice(index, 1);
     });
+    console.log('wat is tis')
+    this.forceUpdate();
+    this.fire('row:destroy');
   },
 
   destroyRows: function () {
@@ -14796,6 +14847,7 @@ module.exports = Ractive.extend({
     this.set('columns', []);
     this.set('rows', []);
     this.set('columnIdByName', {});
+    this.fire('clear');
   },
 
   getRows: function () {
@@ -14816,17 +14868,39 @@ module.exports = Ractive.extend({
     return ret;
   },
 
+  getRow: function (i) {
+    var columns = this.get('columns');
+    var data = this.get('rows.' + i);
+    var row = {};
+
+    columns.forEach(function (column) {
+      row[column.name] = data[column.id];
+    });
+
+    return row;
+  },
+  
+  setCell: function (row, column, value) {
+    if (column.charAt(0) !== '_') column = this.getColumnID(column);
+    return this.set('rows.' + row + '.' + column, value);
+  },
+  
+  getCell: function (row, column) {
+    if (column.charAt(0) !== '_') column = this.getColumnID(column);
+    return this.get('rows.' + row + '.' + column);
+  },
+
   toJSON: function (indent) {
     var data = {
       name: this.get('name'),
       description: this.get('description'),
       publisher: this.get('publisher'),
       rows: this.getRows()
-    }
+    };
     return JSON.stringify(data, null, indent);
   },
 
-  /* 
+  /*
   * Wow this is a nasty hack that probably won't scale.
   * But for some reason <td> elements of the row being indirectly 
   * moved disappear on dragenter.
@@ -14839,7 +14913,6 @@ module.exports = Ractive.extend({
   }
 
 });
-
 }).call(this,require("FWaASH"))
 },{"FWaASH":3,"Ractive-decorators-sortable":12,"ractive":9,"remove-element":10}],12:[function(require,module,exports){
 /*
