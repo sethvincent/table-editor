@@ -1,6 +1,6 @@
 var removeElement = require('remove-element');
 var Ractive = require('ractive');
-require('Ractive-decorators-sortable');
+require('ractive-decorators-sortable');
 
 module.exports = Ractive.extend({
 
