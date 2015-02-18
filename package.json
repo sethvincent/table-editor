@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "ractive": "0.6.1",
-    "ractive-decorators-sortable": "git://github.com/sethvincent/Ractive-decorators-sortable",
+    "ractive-decorators-sortable": "git://github.com/sethvincent/ractive-decorators-sortable",
     "remove-element": "0.0.0"
   },
   "devDependencies": {
