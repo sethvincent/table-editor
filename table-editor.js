@@ -2,7 +2,7 @@
 (function (process){
 var removeElement = _dereq_('remove-element');
 var Ractive = _dereq_('ractive');
-_dereq_('Ractive-decorators-sortable');
+_dereq_('ractive-decorators-sortable');
 
 module.exports = Ractive.extend({
 
@@ -71,7 +71,7 @@ module.exports = Ractive.extend({
       var row = {};
 
       Object.keys(columnIdByName).forEach(function (name) {
-        if (!item[name]) item[name] = ' ';
+        if (!item[name]) item[name] = null;
         row[columnIdByName[name]] = item[name];
       });
 
@@ -105,7 +105,7 @@ module.exports = Ractive.extend({
 
     if (rows.length > 0) {
       rows.forEach(function (row, i) {
-        changes['rows[' + i + '].' + id] = '';
+        changes['rows[' + i + '].' + id] = null;
       });
       this.set(changes);
     }
@@ -264,7 +264,72 @@ module.exports = Ractive.extend({
 
 });
 }).call(this,_dereq_("FWaASH"))
-},{"FWaASH":4,"Ractive-decorators-sortable":2,"ractive":5,"remove-element":6}],2:[function(_dereq_,module,exports){
+},{"FWaASH":2,"ractive":4,"ractive-decorators-sortable":3,"remove-element":5}],2:[function(_dereq_,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+
+process.nextTick = (function () {
+    var canSetImmediate = typeof window !== 'undefined'
+    && window.setImmediate;
+    var canPost = typeof window !== 'undefined'
+    && window.postMessage && window.addEventListener
+    ;
+
+    if (canSetImmediate) {
+        return function (f) { return window.setImmediate(f) };
+    }
+
+    if (canPost) {
+        var queue = [];
+        window.addEventListener('message', function (ev) {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+
+        return function nextTick(fn) {
+            queue.push(fn);
+            window.postMessage('process-tick', '*');
+        };
+    }
+
+    return function nextTick(fn) {
+        setTimeout(fn, 0);
+    };
+})();
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+}
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+
+},{}],3:[function(_dereq_,module,exports){
 /*
 
 	Ractive-decorators-sortable
@@ -331,7 +396,7 @@ module.exports = Ractive.extend({
 
 	// Common JS (i.e. browserify) environment
 	if ( typeof module !== 'undefined' && module.exports && typeof _dereq_ === 'function' ) {
-		factory( _dereq_( 'Ractive' ) );
+		factory( _dereq_( 'ractive' ) );
 	}
 
 	// AMD?
@@ -477,7 +542,8 @@ module.exports = Ractive.extend({
 	Ractive.decorators.sortable = sortable;
 
 }));
-},{"Ractive":3}],3:[function(_dereq_,module,exports){
+
+},{"ractive":4}],4:[function(_dereq_,module,exports){
 /*
 	ractive.js v0.6.1
 	2014-10-25 - commit 3a576eb3 
@@ -14826,74 +14892,7 @@ module.exports = Ractive.extend({
 
 }( typeof window !== 'undefined' ? window : this ) );
 
-},{}],4:[function(_dereq_,module,exports){
-// shim for using process in browser
-
-var process = module.exports = {};
-
-process.nextTick = (function () {
-    var canSetImmediate = typeof window !== 'undefined'
-    && window.setImmediate;
-    var canPost = typeof window !== 'undefined'
-    && window.postMessage && window.addEventListener
-    ;
-
-    if (canSetImmediate) {
-        return function (f) { return window.setImmediate(f) };
-    }
-
-    if (canPost) {
-        var queue = [];
-        window.addEventListener('message', function (ev) {
-            var source = ev.source;
-            if ((source === window || source === null) && ev.data === 'process-tick') {
-                ev.stopPropagation();
-                if (queue.length > 0) {
-                    var fn = queue.shift();
-                    fn();
-                }
-            }
-        }, true);
-
-        return function nextTick(fn) {
-            queue.push(fn);
-            window.postMessage('process-tick', '*');
-        };
-    }
-
-    return function nextTick(fn) {
-        setTimeout(fn, 0);
-    };
-})();
-
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-}
-
-// TODO(shtylman)
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-
 },{}],5:[function(_dereq_,module,exports){
-module.exports=_dereq_(3)
-},{}],6:[function(_dereq_,module,exports){
 module.exports = remove
 
 function remove(element) {
