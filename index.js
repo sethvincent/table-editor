@@ -1,22 +1,12 @@
 var removeElement = require('remove-element');
 var Ractive = require('ractive');
-require('ractive-decorators-sortable');
 
 module.exports = Ractive.extend({
 
-  onrender: function (asd) {
+  onrender: function () {
     var self = this;
     var uid = this.get('uid');
     if (!uid) this.set('uid', 0);
-
-    this.on('dragenter', function () {
-      /* 
-      * Wow this is a nasty hack that probably won't scale.
-      * But for some reason <td> elements of the row being indirectly 
-      * moved disappear on dragenter.
-      */
-      self.forceUpdate();
-    });
 
     this.on('change', function (change) {
       var self = this;
@@ -45,10 +35,12 @@ module.exports = Ractive.extend({
     var uid = this.get('uid');
     if (!uid) this.set('uid', 0);
 
-    items.forEach( function (item) {
-      Object.keys(item).forEach( function ( name ) {
+    items.forEach(function (item) {
+      var row = item.value ? item.value : item
+      
+      Object.keys(row).forEach(function (name) {
         var columnId;
-
+        
         if (!columnIdByName[name]) {
           columnId = '_' + self.get('uid');
           self.add('uid');
@@ -66,14 +58,15 @@ module.exports = Ractive.extend({
     });
 
     rows = items.map(function (item) {
-      var row = {};
+      var row = item.value ? item.value : item
+      var out = {};
 
       Object.keys(columnIdByName).forEach(function (name) {
-        if (!item[name]) item[name] = ' ';
-        row[columnIdByName[name]] = item[name];
+        if (!row[name]) row[name] = null;
+        out[columnIdByName[name]] = row[name];
       });
 
-      return row;
+      return out;
     });
 
     this.set({
@@ -81,7 +74,7 @@ module.exports = Ractive.extend({
       columnIdByName: columnIdByName,
       rows: rows
     });
-    
+
     this.fire('import');
   },
 
@@ -103,7 +96,7 @@ module.exports = Ractive.extend({
 
     if (rows.length > 0) {
       rows.forEach(function (row, i) {
-        changes['rows[' + i + '].' + id] = '';
+        changes['rows[' + i + '].' + id] = null;
       });
       this.set(changes);
     }
@@ -165,7 +158,7 @@ module.exports = Ractive.extend({
       self.addRow(row);
     });
   },
-  
+
   updateRow: function (id, doc) {
     var row = {};
     
@@ -181,7 +174,6 @@ module.exports = Ractive.extend({
     rows.forEach(function (row, i) {
       if (parseInt(index) === i) rows.splice(index, 1);
     });
-    console.log('wat is tis')
     this.forceUpdate();
     this.fire('row:destroy');
   },
@@ -227,12 +219,12 @@ module.exports = Ractive.extend({
 
     return row;
   },
-  
+
   setCell: function (row, column, value) {
     if (column.charAt(0) !== '_') column = this.getColumnID(column);
     return this.set('rows.' + row + '.' + column, value);
   },
-  
+
   getCell: function (row, column) {
     if (column.charAt(0) !== '_') column = this.getColumnID(column);
     return this.get('rows.' + row + '.' + column);

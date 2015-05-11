@@ -173,8 +173,6 @@ test('set a cell value', function (t) {
   t.end();
 });
 
-
-
 test('get column id from column name', function (t) {
   var ed = new TableEditor();
   
@@ -182,6 +180,20 @@ test('get column id from column name', function (t) {
     { example: 'weeeee', wat: 'wooooo' },
     { example: 'this', wat: 'wooooo' },
     { example: 'weeeee', wat: 'wooooo' }
+  ];
+
+  ed.import(data);
+  t.equal(ed.getColumnID('example'), '_0', 'column id');
+  t.end();
+})
+
+test('allow importing objects with key, value properties like from dat/level', function (t) {
+  var ed = new TableEditor();
+  
+  var data = [
+    { key: '1', value: { example: 'weeeee', wat: 'wooooo' } },
+    { key: '2', value: { example: 'this', wat: 'wooooo' } },
+    { key: '3', value: { example: 'weeeee', wat: 'wooooo' } }
   ];
 
   ed.import(data);
