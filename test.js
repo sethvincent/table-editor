@@ -62,17 +62,13 @@ test('delete a row', function (t) {
   var ed = new TableEditor();
 
   ed.import([
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' }
+    { key: 0, value: { example: 'weeeee', wat: 'wooooo' } },
+    { key: 1, value: { example: 'weeeee', wat: 'wooooo' } },
+    { key: 2, value: { example: 'weeeee', wat: 'wooooo' } }
   ]);
 
   ed.destroyRow(1);
-
-  t.deepEqual(JSON.stringify(ed.getRows()), JSON.stringify([
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' }
-  ]));
+  t.deepEqual(JSON.stringify(ed.getRows()), '[{"key":0,"value":{"example":"weeeee","wat":"wooooo"}},{"key":2,"value":{"example":"weeeee","wat":"wooooo"}}]');
 });
 
 test('delete a column', function (t) {
@@ -80,19 +76,15 @@ test('delete a column', function (t) {
   var ed = new TableEditor();
 
   ed.import([
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' }
+    { key: 0, value: { example: 'weeeee', wat: 'wooooo' } },
+    { key: 1, value: { example: 'weeeee', wat: 'wooooo' } },
+    { key: 2, value: { example: 'weeeee', wat: 'wooooo' } }
   ]);
 
   var id = ed.get('columns.0.id');
   ed.destroyColumn(id);
 
-  t.deepEqual(JSON.stringify(ed.getRows()), JSON.stringify([
-    { wat: 'wooooo' },
-    { wat: 'wooooo' },
-    { wat: 'wooooo' }
-  ]));
+  t.deepEqual(JSON.stringify(ed.getRows()), '[{"key":0,"value":{"wat":"wooooo"}},{"key":1,"value":{"wat":"wooooo"}},{"key":2,"value":{"wat":"wooooo"}}]');
 });
 
 test('toJSON should export stringified JSON', function (t) {
@@ -100,9 +92,9 @@ test('toJSON should export stringified JSON', function (t) {
   var ed = new TableEditor();
 
   var data = [
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' }
+    { key: 0, value: { example: 'weeeee', wat: 'wooooo' } },
+    { key: 1, value: { example: 'weeeee', wat: 'wooooo' } },
+    { key: 2, value: { example: 'weeeee', wat: 'wooooo' } }
   ];
 
   ed.import(data);
@@ -125,9 +117,9 @@ test('should support name, description, publisher', function (t) {
     description: 'example text',
     publisher: 'somebody',
     rows: [
-      { example: 'weeeee', wat: 'wooooo' },
-      { example: 'weeeee', wat: 'wooooo' },
-      { example: 'weeeee', wat: 'wooooo' }
+      { key: 0, value: { example: 'weeeee', wat: 'wooooo' } },
+      { key: 1, value: { example: 'weeeee', wat: 'wooooo' } },
+      { key: 2, value: { example: 'weeeee', wat: 'wooooo' } }
     ]
   };
   
@@ -136,13 +128,13 @@ test('should support name, description, publisher', function (t) {
 });
 
 test('get a cell value', function (t) {
-  var id = 'rows.1._0';
+  var id = 'rows.1.value._0';
   var ed = new TableEditor();
   
   var data = [
-    { example: 'weeeee', wat: 'wooooo' },
-    { example: 'this', wat: 'wooooo' },
-    { example: 'weeeee', wat: 'wooooo' }
+    { key: 0, value: { example: 'weeeee', wat: 'wooooo' } },
+    { key: 1, value: { example: 'this', wat: 'wooooo' } },
+    { key: 2, value: { example: 'weeeee', wat: 'wooooo' } }
   ];
 
   ed.import(data);

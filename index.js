@@ -2,7 +2,6 @@ var removeElement = require('remove-element');
 var Ractive = require('ractive');
 
 module.exports = Ractive.extend({
-
   onrender: function () {
     var self = this;
     var uid = this.get('uid');
@@ -10,18 +9,16 @@ module.exports = Ractive.extend({
 
     this.on('change', function (change) {
       var self = this;
-      
+
       Object.keys(change).forEach(function (key) {
         var key = key.split('.');
-        
+
         if (key[0] === 'columns') {
           if (key[2] === 'name') self.fire('change:column:name', { key: change[key] });
           if (key[2] === 'type') self.fire('change:column:type', { key: change[key] });
         }
 
-        else if (key[0] === 'rows') {
-          
-        }
+        else if (key[0] === 'rows') {}
       });
     });
   },
@@ -31,16 +28,16 @@ module.exports = Ractive.extend({
     var columns = [];
     var columnIdByName = {};
     items = items || [];
-    
+
     var uid = this.get('uid');
     if (!uid) this.set('uid', 0);
 
     items.forEach(function (item) {
-      var row = item.value ? item.value : item
-      
-      Object.keys(row).forEach(function (name) {
+      if (!item.value) item = { value: item }
+
+      Object.keys(item.value).forEach(function (name) {
         var columnId;
-        
+
         if (!columnIdByName[name]) {
           columnId = '_' + self.get('uid');
           self.add('uid');
@@ -57,13 +54,16 @@ module.exports = Ractive.extend({
       });
     });
 
+    var i = 0
     rows = items.map(function (item) {
-      var row = item.value ? item.value : item
-      var out = {};
+      if (!item.value) item = { value: item }
+      var out = { value: {} };
+      out.key = item.key || i
+      i++
 
       Object.keys(columnIdByName).forEach(function (name) {
-        if (!row[name]) row[name] = null;
-        out[columnIdByName[name]] = row[name];
+        if (!item.value[name]) item.value[name] = null;
+        out.value[columnIdByName[name]] = item.value[name];
       });
 
       return out;
@@ -91,12 +91,11 @@ module.exports = Ractive.extend({
     });
 
     this.set('columnIdByName.' + column.name, id);
-
     var rows = this.get('rows');
 
     if (rows.length > 0) {
       rows.forEach(function (row, i) {
-        changes['rows[' + i + '].' + id] = null;
+        changes['rows[' + i + '].value.' + id] = null;
       });
       this.set(changes);
     }
@@ -134,7 +133,7 @@ module.exports = Ractive.extend({
     });
 
     rows.forEach(function (row, i) {
-      delete rows[i][id];
+      delete rows[i].value[id];
     });
 
     this.update();
@@ -142,10 +141,10 @@ module.exports = Ractive.extend({
   },
 
   addRow: function (doc) {
-    var row = doc ? doc : {};
+    var row = doc ? doc : { value: {} };
     
     this.get('columns').forEach(function (column) {
-      row[column.id] = row[column.name] || null;
+      row.value[column.id] = row.value[column.name] || null;
     });
     
     this.push('rows', row);
@@ -160,13 +159,13 @@ module.exports = Ractive.extend({
   },
 
   updateRow: function (id, doc) {
-    var row = {};
-    
+    var row = { value: {} };
+
     this.get('columns').forEach(function (column) {
-      row[column.id] = doc[column.name] || null;
+      row.value[column.id] = doc[column.name] || null;
     });
-    
-    this.set('rows.'+id, row);
+
+    this.set('rows.'+id+ '.value', row);
   },
 
   destroyRow: function (index) {
@@ -196,10 +195,10 @@ module.exports = Ractive.extend({
     var columns = this.get('columns');
 
     rows.forEach(function (row, i) {
-      var newRow = {};
+      var newRow = { key: row.key, value: {} };
 
       columns.forEach(function(column) {
-        newRow[column.name] = row[column.id];
+        newRow.value[column.name] = row.value[column.id];
       });
 
       ret.push(newRow);
@@ -222,12 +221,12 @@ module.exports = Ractive.extend({
 
   setCell: function (row, column, value) {
     if (column.charAt(0) !== '_') column = this.getColumnID(column);
-    return this.set('rows.' + row + '.' + column, value);
+    return this.set('rows.' + row + '.value.' + column, value);
   },
 
   getCell: function (row, column) {
     if (column.charAt(0) !== '_') column = this.getColumnID(column);
-    return this.get('rows.' + row + '.' + column);
+    return this.get('rows.' + row + '.value.' + column);
   },
 
   toJSON: function (indent) {
